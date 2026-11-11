@@ -76,7 +76,8 @@ fn sample(id: &str) -> Session {
     }
 }
 
-/// Serialises `session` as the store would write it.
+/// Serialises `session` as the store would write it (used by the Unix-only link test).
+#[cfg(unix)]
 fn session_text(session: &Session) -> String {
     toml::to_string(session).expect("serialise session")
 }
