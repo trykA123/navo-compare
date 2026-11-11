@@ -13,3 +13,8 @@ path = "src/main.rs"
 
 [lints]
 workspace = true
+
+[dependencies]
+gpui-kit = "=0.9.1"
+navo-compare-profile = { path = "../navo-compare-profile" }
+navo-ui = { git = "https://github.com/trykA123/navo", rev = "14a57fd611670233aee055148a4a87d2ba8cc518" }

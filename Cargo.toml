@@ -39,3 +39,7 @@ codegen-units = 1
 debug = "line-tables-only"
 strip = "none"
 panic = "unwind"
+
+# A patch does not pass through a dependency (NC32): repeat navo's patch at the pinned rev.
+[patch.crates-io]
+gpui-pre-windows = { git = "https://github.com/trykA123/navo", rev = "14a57fd611670233aee055148a4a87d2ba8cc518" }
