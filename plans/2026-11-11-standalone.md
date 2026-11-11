@@ -53,12 +53,13 @@ Final. Workers never reopen them; a worker that finds one wrong stops and report
 - **NC6 — Standalone folder view: one aligned tree.** One list, left and right columns with a status gutter between them; folders expand in place (→ / ←), so the user sees depth without leaving the row. Built from `compare_list` rows. Navo keeps the two-pane Enter/Backspace model (D10). Reason: the pane model exists to fit Navo's panes; a compare app has no panes to honour, and every current compare tool users know shows a tree.
 - **NC7 — Own data (owner: "own").** Standalone profile folder `NavoCompare`, a sibling of Navo's: `settings.toml` (`[compare]`, look, keys), its own `CacheDb` (`content-hash`, `compare-viewed`), its own job journal and held files, `sessions/`, logs. Nothing is shared at run time. First start offers once to copy the `[compare]` section from a Navo profile it finds; it never writes there. Module mode keeps using Navo's files. `--profile <dir>` gives a portable folder.
 - **NC8 — Sessions and tabs.** A session is two side specs, the rules, the filter and the view stack (folder → Stream → file diff). Open sessions are tabs in one window. Sessions auto-save to "Recent" (20 kept); Ctrl+S on the start row names one, and named ones stay until deleted. Stored as one TOML file each under `sessions/`.
-- **NC9 — One instance, many tabs, `--wait`.** One process per user and profile (the `navo-app::instance` pipe pattern with its own name). A second `navo-compare …` hands its arguments to the running one, which opens a tab. With `--wait` the calling process stays alive until that tab closes and returns its exit code. `--new-window` opens a window instead of a tab.
+- **NC9 — One instance, many tabs, `--wait`.** One process per user and profile (the `navo-app::instance` pipe pattern with its own name). A second `navo-compare …` hands its arguments to the running one, which opens a tab. With `--wait` the calling process stays alive until that tab closes and returns its exit code. `--new-window` opens a window instead of a tab. A console shell does not wait for a GUI-subsystem exe (Beyond Compare ships `BComp.com` beside `BCompare.exe` for this reason), so the package also holds a small console launcher, `ncompare.exe`, that forwards its arguments with `--wait`. The Windows VM proves both from `cmd`, PowerShell and Git.
 - **NC10 — Command line.**
   - `navo-compare <left> <right>`: files, folders or `repo@rev` specs, in any mix that makes sense.
   - `--wait`, `--new-window`, `--profile <dir>`, `--left-title <t>`, `--right-title <t>`, `--read-only`.
   - Exit codes: 0 closed or saved, 1 closed with unsaved changes discarded, 2 error. Headless reports (Compare 2) follow `diff(1)`: 0 same, 1 different, 2 error.
   - Three-way (`<base> <ours> <theirs> -o <out>`) arrives with Part M and replaces M9's `navo merge`; `navo compare` in Navo becomes a thin forward to the same parser.
+  - Tool contracts the parser must accept (NC-R0): Git difftool `$LOCAL $REMOTE` (Git ignores the exit code unless `--trust-exit-code`); Git mergetool `$BASE $LOCAL $REMOTE $MERGED` (without `trustExitCode` Git checks whether MERGED changed); TortoiseGit `%base %mine %theirs %merged`, exit 0 marks resolved; Subversion base, theirs, mine, merged with 0 success and 1 failure; Perforce base, theirs, yours, result. Mercurial and Visual Studio are unverified and wait for Part M.
   - A "Use as Git difftool" button shows the exact `git config` lines with Copy, and applies them only after a confirm dialog (it changes the user's Git config).
 - **NC11 — Keys and commands.** Command ids and contexts stay as they are. The compare bindings move to one fragment that both keymaps include, so a key is defined once. The standalone adds shell keys only: Ctrl+O choose sides, Ctrl+T new tab, Ctrl+W close tab, Ctrl+Tab next tab, F5 refresh, Ctrl+K palette, Ctrl+, settings, F1 key list. All rebindable (D49).
 - **NC12 — Look.** Same theme tokens, fade-only motion and D58 calm rule as Navo. The shell (start screen, tab strip, folder tree, settings) comes from one designer round, NC-U0; the orchestrator picks. It gets its own app icon and window title.
@@ -89,6 +90,8 @@ Order by value for the cost. Items marked P42 are already planned there and are 
 | Compare 2 | Moved blocks (P42 V44+); live working-copy compare (C-live); open `.patch`/`.diff` (C-patch) | P42, research picks |
 | Compare 2 | Reports: HTML and unified patch export of a file diff, a Stream or a folder compare; headless `--report` | new |
 | Compare 2 | Rules beyond whitespace: per-session regex "ignore lines matching" and "replace before compare" (timestamps, generated ids) | new; the engine's `normalise` is the hook |
+| Compare 2 | Unimportant differences: a rule match shows in a quieter tone and one toggle hides it (Beyond Compare's model); a line filter bar in the file diff shows only lines that match | small on top of the rules |
+| Compare 2 | Merge screen: result pane under the inputs, each conflict centred, navigation stays in the result (Araxis 2026, WinMerge 2.16.59) | input to Part M's design round |
 | Compare 2 | Archives as folders on either side (the `navo-fs` archive provider) | wiring only |
 | Compare 2 | "What this branch changed": compare a ref with its merge-base (three-dot), one command | small; `GitSource::merge_base` exists |
 | Compare 2 | Folder sync (P42 Part Y) | P42, blocked on D65 |
@@ -97,9 +100,19 @@ Order by value for the cost. Items marked P42 are already planned there and are 
 | Compare 3 | Syntax-aware text diff (C-syntax, D20 caps) | large |
 | Compare 3 | Embedded and automotive files on `navo-automotive`: Intel HEX and S-Record by address, linker map by symbol and section size, A2L and DBC by object | medium each; no competitor has it |
 | Compare 3 | File history: step one file through its Git revisions with the diff open | medium |
-| Later | Three-way folder compare; folder snapshots (compare today with a saved listing) | on demand |
+| Later | Three-way folder compare; folder snapshots (compare today with a saved listing); owner and permission compare; a file shelf for more than two files | on demand |
 
 No-gos: FTP, SFTP and cloud sides; Git writes; AI suggestions; registry and media-tag compare.
+
+## Research (NC-R0, 2026-11-11)
+
+Partial: the researcher's budget ran out. Checked from vendor pages and changelogs: Beyond Compare 5.2.8, WinMerge 2.16.60, Araxis 2026.1, Kaleidoscope 7, Sublime Merge, Meld 3.24.1. Not checked: start screens and session naming of each tool, VS Code, JetBrains, Zed, difftastic, delta, user surveys. NC-U0's researcher step covers the screens.
+
+- **Where the others hurt.** Slow folder compares on USB and network drives and disk thrash (Beyond Compare forum); DPI and dark-theme defects fixed release after release (Beyond Compare 5.1–5.2, WinMerge 2.16.58); long-path and Unicode crashes; Meld has no portable Windows build; Kaleidoscope is macOS-only and subscription-only. Navo Compare's answers exist already: one background content pass with a hash cache (D19), theme tokens only, long paths in `navo-fs`.
+- **Instances and waiting.** Beyond Compare, WinMerge, Araxis, Kaleidoscope and Sublime Merge all run one instance with a waiting console command beside it. NC9 follows them.
+- **Exit codes.** WinMerge and `diff(1)` use 0 same, 1 different, 2 error; NC10 keeps that for headless runs.
+- **Prices today.** Beyond Compare $35 Standard, $70 Pro, one-time. Araxis $129 and $269, one-time with paid renewals. Sublime Merge $99 one-time. Kaleidoscope from $8 a month. Meld and WinMerge are free. Pricing of Navo Compare is the owner's decision, not part of this plan.
+- **Left out on purpose.** A script language (Beyond Compare `@script`), plugin pipelines, SFTP sides, media tags, hunk staging and an AI conflict helper stay no-gos or later; headless `--report` with exit codes covers the scripted use.
 
 ## Risks and rollback
 
@@ -138,8 +151,8 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | **Stage 0 — this repo, no shared files** | | | | | | | |
 | NC-G0 | repo scaffold: workspace, toolchain, lints, `.gitignore`, README, a `--version` stub (gate script and CI come with Stage 2) | orchestrator | — | — | `cargo build`, `cargo fmt --check`, `cargo clippy`; private repo on GitHub | done | |
-| NC-R0 | competitor research | researcher (Haiku) | xhigh | — | report with sources | running | |
-| NC-U0 | shell design round: start screen, header, folder tree, tabs, clipboard compare | designer (Sonnet) | medium | NC-R0 | 4 directions behind one picker, both themes, 390 px and desktop | todo | |
+| NC-R0 | competitor research | researcher (Haiku) | xhigh | — | report with sources | done, partial (see Research) | |
+| NC-U0 | shell design round: start screen, header, folder tree, tabs, clipboard compare; its researcher step gathers the start screens the first research missed | designer (Sonnet) | medium | NC-R0 | 4 directions behind one picker, both themes, 390 px and desktop | todo | |
 | **Stage 1 — seams, in `navo` (after V42 is on main)** | | | | | | | |
 | N0 | Stage 1 briefs | architect (Opus) | high | V42 merged | briefs N1–N8 in this file; plan check by `reviewer` | blocked | |
 | N1b | compare service as a library (NC2b) | api-builder (Sonnet) | high | N0 | `cargo xtask check -p navo-app` and the new crate | blocked | |
@@ -167,3 +180,4 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 
 - 2026-11-11 — Owner: ship the standalone now, as a separate exe, with its own data, also usable as a Navo module; UX and design are the orchestrator's choice (D114). Plan drafted at `origin/main@14a57fd6`. NC-R0 started. Nothing built: V41b–V42 are landing in the same files (R1).
 - 2026-11-11 — Owner: a new repository for the app; do not commit this work into `navo` now. Repo `navo-compare` created (private), plan moved here, NC2 rewritten for two repositories, NC13 for an own version line. `navo` is untouched.
+- 2026-11-11 — NC-R0 back, partial (tool budget ran out; UX of start screens and editors' diff views unchecked). Added the Research section, the console launcher to NC9, tool contracts to NC10, and three feature rows.
