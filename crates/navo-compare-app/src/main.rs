@@ -1,6 +1,11 @@
 //! Entry point of the app (its name is in `navo_compare_profile::brand`). `--version` prints the version; otherwise one empty window
 //! opens (spike U0; the screens arrive with Stage 2 of `plans/2026-11-11-standalone.md`).
 
+mod shell;
+#[cfg(test)]
+mod shell_tests;
+#[cfg(test)]
+mod test_window;
 mod window;
 
 use std::process::ExitCode;
