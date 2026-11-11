@@ -267,12 +267,15 @@ fn unknown_rule_values_are_broken_on_read() {
 }
 
 #[test]
-fn leftover_temp_file_is_ignored() {
+fn leftover_temp_files_are_ignored() {
     let temp = TempDir::new("temp-file");
     let store = store(&temp);
     store.save(&sample("aaaa")).expect("save");
-    std::fs::write(temp.join("sessions").join("aaaa.toml.tmp"), "version = 2\n")
-        .expect("temp file");
+    let sessions = temp.join("sessions");
+    let pid = std::process::id();
+    for name in [format!("aaaa.toml.{pid}.tmp"), "aaaa.toml.tmp".to_string()] {
+        std::fs::write(sessions.join(name), "version = 2\n").expect("temp file");
+    }
     assert_eq!(store.load("aaaa").expect("load"), sample("aaaa"));
     assert_eq!(store.list().expect("list").len(), 1);
 }

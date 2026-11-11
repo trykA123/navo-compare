@@ -15,9 +15,6 @@ pub const PROFILE_VERSION: u32 = 1;
 /// The marker file name inside the data folder.
 const MARKER: &str = "profile.toml";
 
-/// The temporary file used while writing the marker.
-const TEMP_MARKER: &str = "profile.toml.tmp";
-
 /// The data folders created beside the marker.
 const DATA_FOLDERS: [&str; 5] = ["sessions", "cache", "journal", "logs", "crashes"];
 
@@ -123,7 +120,10 @@ impl Profile {
                 });
             }
             Some(found) if found < 1 => return Err(ProfileError::Broken { path: marker }),
-            Some(_) => create_data_dirs(&folders.data)?,
+            Some(_) => {
+                create_dir_all(&folders.config)?;
+                create_data_dirs(&folders.data)?;
+            }
         }
         Ok(Profile { folders })
     }
@@ -178,9 +178,10 @@ fn read_marker(path: &Path) -> Result<Option<u32>, ProfileError> {
     Ok(Some(marker.version))
 }
 
-/// Writes the marker to a temporary file, syncs it, then renames it into place.
+/// Writes the marker to a per-process temporary file, syncs it, then renames
+/// it into place.
 fn write_marker(path: &Path) -> Result<(), ProfileError> {
-    let temp = path.with_file_name(TEMP_MARKER);
+    let temp = path.with_file_name(format!("{MARKER}.{}.tmp", std::process::id()));
     let text = format!("version = {PROFILE_VERSION}\n");
     let mut file = File::create(&temp).map_err(|error| io(&temp, error))?;
     file.write_all(text.as_bytes())

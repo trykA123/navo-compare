@@ -79,15 +79,17 @@ impl SessionStore {
         if !is_valid_id(&session.id) {
             return Err(StoreError::BadId(session.id.clone()));
         }
-        if !sides_valid(session) || !rules_valid(&session.rules) || !filter_valid(&session.filter) {
-            return Err(StoreError::BadSide);
-        }
         if session.kind == SessionKind::Texts {
             return Err(StoreError::NotStorable);
         }
+        if !sides_valid(session) || !rules_valid(&session.rules) || !filter_valid(&session.filter) {
+            return Err(StoreError::BadSide);
+        }
         let _existing = self.read_existing(&session.id)?;
         let path = self.session_file(&session.id);
-        let text = toml::to_string(session).map_err(|error| StoreError::Io {
+        let mut stored = session.clone();
+        stored.version = SESSION_VERSION;
+        let text = toml::to_string(&stored).map_err(|error| StoreError::Io {
             path: path.clone(),
             error: std::io::Error::other(error),
         })?;
@@ -139,6 +141,12 @@ impl SessionStore {
                 path: self.dir.clone(),
                 error,
             })?;
+            let Ok(kind) = entry.file_type() else {
+                continue;
+            };
+            if !kind.is_file() {
+                continue;
+            }
             let Some(id) = file_id(&entry.file_name()) else {
                 continue;
             };
@@ -199,7 +207,8 @@ impl SessionStore {
 
     /// Returns `<dir>/<id>.toml.tmp`.
     fn temp_file(&self, id: &str) -> PathBuf {
-        self.dir.join(format!("{id}.toml.tmp"))
+        self.dir
+            .join(format!("{id}.toml.{}.tmp", std::process::id()))
     }
 
     /// Writes `bytes` to `path` and syncs the file to disk.

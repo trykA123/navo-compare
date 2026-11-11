@@ -226,6 +226,17 @@ fn second_open_recreates_a_missing_data_folder() {
 }
 
 #[test]
+fn same_version_open_recreates_a_missing_config_folder() {
+    let root = TempDir::new("config-missing");
+    Profile::open(folders_in(&root)).expect("first open");
+    std::fs::remove_dir_all(root.join("config")).expect("remove config");
+    let before = read_marker(&root);
+    Profile::open(folders_in(&root)).expect("second open");
+    assert!(root.join("config").is_dir());
+    assert_eq!(read_marker(&root), before);
+}
+
+#[test]
 fn newer_profile_is_refused_and_left_unchanged() {
     let root = TempDir::new("newer");
     write_marker(&root, "version = 2\n");

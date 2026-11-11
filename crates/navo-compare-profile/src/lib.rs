@@ -11,3 +11,6 @@ mod paths_tests;
 
 #[cfg(test)]
 mod session_tests;
+
+#[cfg(test)]
+mod session_store_tests;
