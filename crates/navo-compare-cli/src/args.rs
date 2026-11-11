@@ -32,6 +32,8 @@ pub struct Invocation {
 pub enum Action {
     Start { left: Option<SideSpec> },
     Compare { left: SideSpec, right: SideSpec },
+    SelectLeft { path: PathBuf },
+    CompareWith { right: PathBuf },
     Version,
     Help,
 }
@@ -51,6 +53,7 @@ pub enum ArgError {
     NotUnicode,
     BadRev(String),
     ThreeWay,
+    PickWithSides,
     TooManyArgs(usize),
     TooLong(usize),
 }
@@ -92,6 +95,10 @@ impl fmt::Display for ArgError {
             Self::NotUnicode => write!(f, "an argument is not valid Unicode."),
             Self::BadRev(rev) => write!(f, "the revision {rev:?} is not valid."),
             Self::ThreeWay => write!(f, "three-way merge arrives in a later release."),
+            Self::PickWithSides => write!(
+                f,
+                "options `--select-left` and `--compare-with` take one path and no other side."
+            ),
             Self::TooManyArgs(count) => write!(f, "too many arguments: {count}."),
             Self::TooLong(bytes) => write!(f, "the arguments are too long: {bytes} bytes."),
         }
@@ -153,6 +160,8 @@ struct Scan {
     profile: Option<PathBuf>,
     left_title: Option<String>,
     right_title: Option<String>,
+    select_left: Option<String>,
+    compare_with: Option<String>,
     positionals: Vec<String>,
     wants_version: bool,
     wants_help: bool,
@@ -168,11 +177,17 @@ impl Scan {
     }
 
     /// Stores a value flag's last value.
-    fn set_value(&mut self, flag: &str, value: String) {
+    fn set_value(&mut self, flag: &'static str, value: String) {
+        if value.is_empty() && matches!(flag, "--select-left" | "--compare-with") {
+            self.fail(ArgError::MissingValue(flag));
+            return;
+        }
         match flag {
             "--profile" => self.profile = Some(PathBuf::from(value)),
             "--left-title" => self.left_title = Some(value),
             "--right-title" => self.right_title = Some(value),
+            "--select-left" => self.select_left = Some(value),
+            "--compare-with" => self.compare_with = Some(value),
             _ => {}
         }
     }
@@ -225,6 +240,22 @@ impl Scan {
 
     /// Builds the action from the positionals, parsing each side in order.
     fn action(&self, cwd: &Path, exists: &dyn Fn(&Path) -> bool) -> Result<Action, ArgError> {
+        let pick = match (&self.select_left, &self.compare_with) {
+            (Some(_), Some(_)) => return Err(ArgError::PickWithSides),
+            (Some(left), None) => Some(Action::SelectLeft {
+                path: cwd.join(left),
+            }),
+            (None, Some(right)) => Some(Action::CompareWith {
+                right: cwd.join(right),
+            }),
+            (None, None) => None,
+        };
+        if let Some(action) = pick {
+            if self.positionals.is_empty() {
+                return Ok(action);
+            }
+            return Err(ArgError::PickWithSides);
+        }
         match self.positionals.as_slice() {
             [] => Ok(Action::Start { left: None }),
             [one] => Ok(Action::Start {
@@ -257,6 +288,8 @@ fn value_flag(name: &str) -> Option<&'static str> {
         "--profile" => Some("--profile"),
         "--left-title" => Some("--left-title"),
         "--right-title" => Some("--right-title"),
+        "--select-left" => Some("--select-left"),
+        "--compare-with" => Some("--compare-with"),
         _ => None,
     }
 }

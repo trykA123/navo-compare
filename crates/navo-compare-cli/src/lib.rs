@@ -4,4 +4,7 @@
 pub mod args;
 
 #[cfg(test)]
+mod args_pick_tests;
+
+#[cfg(test)]
 mod args_tests;
