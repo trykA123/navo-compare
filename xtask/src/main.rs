@@ -1,11 +1,14 @@
 //! Developer commands for this repository, run as `cargo xtask <command>`.
-//! `bench-data` writes the seeded data sets S, M and L from NC33.
+//! `bench-data` writes seeded bench sets; `lock-drift` compares lockfiles.
 
 mod bench_data;
 mod bench_data_large;
 #[cfg(test)]
 mod bench_data_tests;
 mod bench_rng;
+mod lock_drift;
+#[cfg(test)]
+mod lock_drift_tests;
 
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -37,6 +40,7 @@ fn main() -> ExitCode {
     };
     match command.as_str() {
         "bench-data" => run_bench_data(args.collect()),
+        "lock-drift" => run_lock_drift(args.collect()),
         other => {
             eprintln!("xtask: unknown command '{other}'");
             ExitCode::from(2)
@@ -97,6 +101,67 @@ fn run_bench_data(args: Vec<String>) -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// Runs `lock-drift` against `--other` and prints one line per drift.
+#[expect(
+    clippy::print_stderr,
+    clippy::print_stdout,
+    reason = "command-line tool: output and errors go to the terminal"
+)]
+fn run_lock_drift(args: Vec<String>) -> ExitCode {
+    let (ours, theirs) = match parse_lock_options(&args) {
+        Ok(paths) => paths,
+        Err(message) => {
+            eprintln!("xtask lock-drift: {message}");
+            return ExitCode::from(2);
+        }
+    };
+    match lock_drift::run(&ours, &theirs) {
+        Ok(report) => {
+            for drift in &report.drifts {
+                println!(
+                    "{}: ours {}; theirs {}",
+                    drift.name,
+                    drift.ours.join(", "),
+                    drift.theirs.join(", ")
+                );
+            }
+            println!("drift={} shared={}", report.drifts.len(), report.shared);
+            if report.drifts.is_empty() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(1)
+            }
+        }
+        Err(error) => {
+            eprintln!("xtask lock-drift: {error}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+/// Parses `--other <file>` and an optional `--ours <file>`.
+fn parse_lock_options(args: &[String]) -> Result<(PathBuf, PathBuf), String> {
+    let mut ours = None;
+    let mut other = None;
+    let mut index = 0;
+    while index < args.len() {
+        let flag = &args[index];
+        let value = args
+            .get(index + 1)
+            .ok_or_else(|| format!("'{flag}' needs a value"))?;
+        match flag.as_str() {
+            "--other" => other = Some(PathBuf::from(value)),
+            "--ours" => ours = Some(PathBuf::from(value)),
+            unknown => return Err(format!("unknown option '{unknown}'")),
+        }
+        index += 2;
+    }
+    Ok((
+        ours.unwrap_or_else(|| PathBuf::from("Cargo.lock")),
+        other.ok_or_else(|| "--other is required".to_owned())?,
+    ))
 }
 
 /// Parses `--set`, `--seed`, `--out` and an optional `--files`.
