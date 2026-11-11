@@ -165,6 +165,38 @@ kbd { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border-r
 .card .ch { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 10px; border-bottom: 1px solid var(--line); }
 .bars { display: inline-flex; gap: 2px; } .bars b { width: 14px; height: 6px; border-radius: 1px; background: var(--line); }
 .bars b.l { background: var(--only-l); } .bars b.r { background: var(--only-r); }
+/* shared screens: any file type, selection, speed, text */
+.grid8 { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 10px; padding: 12px; overflow: hidden; }
+.mini { border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.mini .mh { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 9px; border-bottom: 1px solid var(--line); flex: none; }
+.mini .mh b { font-weight: 500; } .mini .mh span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini .mb { flex: 1; min-height: 0; padding: 7px 9px; font-family: var(--font-mono); font-size: 11px; line-height: 1.7; overflow: hidden; }
+.mini .mf { flex: none; padding: 5px 9px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mb .x { display: block; white-space: pre; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; border-radius: 2px; }
+.mb .x.del { background: var(--only-l-bg); color: var(--only-l); } .mb .x.add { background: var(--only-r-bg); color: var(--only-r); } .mb .x.c { color: var(--chg); }
+.cells { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.cells span { background: var(--surface); padding: 1px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cells .hd { color: var(--faint); } .cells .cc { background: var(--only-r-bg); color: var(--only-r); } .cells .cd { background: var(--only-l-bg); color: var(--only-l); }
+.imgs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; height: 100%; }
+.imgs div { border-radius: 4px; background: linear-gradient(135deg, var(--hover), var(--sel)); position: relative; box-shadow: inset 0 0 0 1px var(--line); }
+.imgs div::after { content: ""; position: absolute; left: 22%; top: 30%; width: 34%; height: 34%; border-radius: 50%; background: var(--accent); opacity: 0.8; }
+.imgs div.r::after { left: 34%; width: 40%; } .imgs div.dx { background: var(--rail); } .imgs div.dx::after { left: 52%; width: 22%; border-radius: 0 50% 50% 0; background: var(--chg); opacity: 1; }
+.hx b { font-weight: 400; background: var(--only-r-word); border-radius: 2px; } .hx i { font-style: normal; color: var(--faint); }
+.box { width: 13px; height: 13px; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--faint); flex: none; display: grid; place-items: center; font-size: 10px; line-height: 1; }
+.box.on { background: var(--accent); box-shadow: none; color: var(--on-accent); }
+.act { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 8px 0 14px; border-radius: 10px; background: var(--surface); box-shadow: var(--shadow); white-space: nowrap; }
+.btn2 { height: 28px; padding: 0 11px !important; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); }
+.mark { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-bottom: 1px solid var(--line); background: var(--hover); flex-wrap: wrap; }
+.tagm { font-family: var(--font-mono); font-size: 10px; font-weight: 700; padding: 0 4px; border-radius: 3px; background: var(--accent); color: var(--on-accent); }
+.stages { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.stg { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; white-space: nowrap; }
+.stg.done { color: var(--ok); } .stg.run { box-shadow: inset 0 0 0 1px var(--accent); color: var(--accent); }
+.bud { display: grid; grid-template-columns: minmax(0, 1.5fr) 110px minmax(0, 1.6fr); gap: 0 14px; padding: 4px 12px; font-size: 12px; }
+.bud > span { padding: 5px 0; border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bud .hd { color: var(--faint); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+.bud .t { font-family: var(--font-mono); color: var(--accent); }
+.pane { flex: 1; min-width: 0; display: flex; flex-direction: column; } .pane + .pane { border-left: 1px solid var(--line); }
+.pane .ph { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-bottom: 1px solid var(--line); color: var(--muted); flex: none; }
 @media (prefers-reduced-motion: no-preference) { .win { transition: opacity 80ms; } }
 </style>
 
@@ -266,6 +298,7 @@ const map = `<div class="map"><span class="vp"></span><b style="top:12%;backgrou
 const sbs = (extraL = "", extraR = "") => `<div class="diff"><div class="side ${extraL}">${sideLines("l")}</div><div class="side ${extraR}">${sideLines("r")}</div>${map}</div>`;
 const pills = `<span class="pill"><span class="k">L</span><span class="mono">navo@v0.6.0</span></span><span class="swap">⇄</span><span class="pill"><span class="k">R</span><span class="mono">navo@main</span></span>`;
 const rules = `<span class="chip on">Ignore whitespace</span><span class="chip">Line endings</span><span class="chip">Case</span>`;
+const diffRules = rules + `<span class="chip on">Hide unchanged</span>`;
 const filter = `<span class="mseg"><span>All 11</span><span class="on">Differences 7</span><span>Orphans 2</span><span>Same 2</span></span>`;
 const fieldsRow = `<div style="display:flex;gap:8px;align-items:center"><div class="field focus grow"><span class="faint">Left</span><span class="v mono">${esc(L)}</span><span class="chip">Git ref</span></div><span class="swap">⇄</span><div class="field grow"><span class="faint">Right</span><span class="v mono">${esc(R)}</span><span class="caret"></span><span class="chip">Git ref</span></div><button class="primary">Compare</button></div>`;
 
@@ -278,9 +311,9 @@ const VIEWS = {
       <div class="rec"><span>ECU nightly</span><span></span><span class="mono muted">D:\\builds\\prev ↔ D:\\builds\\latest</span><span class="muted">Folders</span><span></span></div></div></div>` +
       status("<kbd>Ctrl+K</kbd> commands", "<kbd>F1</kbd> keys"),
     folders: () => titlebar(TABS) + `<div class="body"><div class="col"><div class="head">${pills}<span class="crumb">› <b>Folders</b></span><span class="grow"></span>${rules}${filter}</div>${tree(2)}</div></div>` +
-      status("7 differences · 2 orphans · 2 same", "Checking 1 file · 62 %", "<kbd>Enter</kbd> open · <kbd>Alt+F</kbd> Stream · <kbd>Ctrl+Alt+→</kbd> copy right"),
-    diff: () => titlebar(TABS) + `<div class="body"><div class="col"><div class="head">${pills}<span class="crumb">› Folders › Stream › <b>crates/navo-compare/src/text/card.rs</b></span><span class="grow"></span>${rules}<span class="mseg"><span class="on">Side by side</span><span>Unified</span></span></div>${sbs()}</div></div>` +
-      status("Change 2 of 4 · file 1 of 7", "UTF-8 · LF", "<kbd>Alt+↓</kbd> next change · <kbd>Ctrl+Alt+↓</kbd> next file · <kbd>Esc</kbd> back"),
+      status("7 differences · 2 orphans · 2 same", "+65 −18 lines in 4 text files", "Checking 1 file · 62 %", "<kbd>Enter</kbd> open · <kbd>Alt+F</kbd> Stream · <kbd>Ctrl+Alt+→</kbd> copy right"),
+    diff: () => titlebar(TABS) + `<div class="body"><div class="col"><div class="head">${pills}<span class="crumb">› Folders › Stream › <b>crates/navo-compare/src/text/card.rs</b></span><span class="grow"></span>${diffRules}<span class="mseg"><span class="on">Side by side</span><span>Unified</span></span></div>${sbs()}</div></div>` +
+      status("Change 2 of 4 · file 1 of 7", "3 changed · 2 added · 0 removed lines", "UTF-8 · LF", "<kbd>Alt+↓</kbd> next change · <kbd>Ctrl+Alt+↓</kbd> next file · <kbd>Esc</kbd> back"),
   },
   b: {
     start: () => titlebar("") + `<div class="body">${railB(-1)}<div class="col" style="padding:54px 70px 0;gap:10px">
@@ -293,7 +326,7 @@ const VIEWS = {
     folders: () => titlebar("") + `<div class="body">${railB(0)}<div class="col"><div class="head">${pills}<span class="grow"></span>${filter}</div>${tree(2)}
       <div class="strip"><div class="cap"><b style="color:var(--text);font-weight:500">card.rs</b><span>first change of 4</span><span class="grow"></span><kbd>Space</kbd> preview · <kbd>Enter</kbd> open</div>${unified(4)}</div></div></div>` +
       status("7 differences · 2 orphans · 2 same", "Checking 1 file · 62 %"),
-    diff: () => titlebar("") + `<div class="body">${railB(0, true)}<div class="col"><div class="head"><span class="crumb"><b>card.rs</b> <span class="faint">crates/navo-compare/src/text</span></span><span class="grow"></span>${rules}<span class="mseg"><span class="on">Side by side</span><span>Unified</span></span></div>${sbs()}</div></div>` +
+    diff: () => titlebar("") + `<div class="body">${railB(0, true)}<div class="col"><div class="head"><span class="crumb"><b>card.rs</b> <span class="faint">crates/navo-compare/src/text</span></span><span class="grow"></span>${diffRules}<span class="mseg"><span class="on">Side by side</span><span>Unified</span></span></div>${sbs()}</div></div>` +
       status("Change 2 of 4 · file 1 of 7", "UTF-8 · LF", "<kbd>Esc</kbd> back to folders"),
   },
   c: {
@@ -352,6 +385,53 @@ function dOutline() {
   return ROWS.filter((r) => !r[2] && r[5] !== "same").map((r, i) => `<div class="ri${i === 0 ? " on" : ""}" style="margin:0 6px"><span class="bars"><b class="${r[3] ? "l" : ""}"></b><b class="${r[4] ? "r" : ""}"></b></span><span>${r[1].split("/").pop()}</span></div>`).join("");
 }
 
+/** One small viewer card for the "any file" screen. */
+const mini = (kind, name, body, foot) => `<div class="mini"><div class="mh"><b>${kind}</b><span class="faint mono">${name}</span></div><div class="mb">${body}</div><div class="mf">${foot}</div></div>`;
+const x = (cls, t) => `<span class="x ${cls}">${esc(t)}</span>`;
+/** Selection tree: the aligned tree with a tick box per row; `ticks` lists ticked row indexes. */
+function pickTree(ticks) {
+  const base = tree(-1);
+  let i = -1;
+  return base.replace(/<div class="tr( on)?">/g, (m, rest = "") => { i += 1; const on = ticks.includes(i);
+    return `<div class="tr${rest}${on ? " on" : ""}" style="grid-template-columns:16px minmax(0,1fr) 70px 96px 120px minmax(0,1fr) 70px 96px"><span class="box${on ? " on" : ""}">${on ? "✓" : ""}</span>`; })
+    .replace('<div class="tr hd">', '<div class="tr hd" style="grid-template-columns:16px minmax(0,1fr) 70px 96px 120px minmax(0,1fr) 70px 96px"><span></span>');
+}
+const SHARED = {
+  types: () => titlebar(TABS) + `<div class="body"><div class="col"><div class="head">${pills}<span class="crumb">› <b>Every kind of file</b></span><span class="grow"></span><span class="mseg"><span class="on">Best view</span><span>Text</span><span>Bytes</span></span></div><div class="grid8">` +
+    mini("Text", "card.rs", x("", "  let mut rows = Vec::new();") + x("del", "- let context = 3;") + x("add", "+ let context = limits.context_lines;") + x("", "  for hunk in alignment.hunks() {"), "Any size · any encoding · line endings kept") +
+    mini("Structured", "prod.yaml", x("c", "server.port      8080 → 8443") + x("add", "+ features[2]     \"stream\"") + x("del", "- cache.ttl       300") + x("", "  key order ignored"), "JSON · YAML · XML · TOML, by key") +
+    mini("Table", "prices.csv", `<div class="cells"><span class="hd">sku</span><span class="hd">price</span><span class="hd">stock</span><span>A-104</span><span class="cc">12.90</span><span>40</span><span>A-221</span><span>8.00</span><span class="cc">0</span><span class="cd">B-007</span><span class="cd">3.10</span><span class="cd">12</span></div>`, "CSV · XLSX, rows matched by key column") +
+    mini("Image", "logo.png", `<div class="imgs"><div></div><div class="r"></div><div class="dx"></div></div>`, "2.1 % of pixels differ · 48 KB ↔ 51 KB") +
+    mini("Bytes", "firmware.bin", `<span class="x hx"><i>0001F3E0</i>  4E 41 56 4F 00 06 00 00</span><span class="x hx"><i>0001F3E8</i>  <b>00 07</b> 00 00 A4 11 3C 90</span><span class="x add">+ 2 048 bytes inserted</span><span class="x hx"><i>0001FBF0</i>  FF FF FF FF 5A 5A 00 01</span>`, "Aligned by content: the rest stays in step") +
+    mini("Embedded", "ecu.hex · ecu.map", x("c", ".text      +1.2 KB") + x("c", "0x80004000  Can_MainFunction  +96 B") + x("add", "+ 0x8000A120  Dcm_ReadDid_F190") + x("", "  by address, not by line"), "Intel HEX · S-Record · linker map · A2L · DBC") +
+    mini("Archive", "release.zip", x("", "▾ release.zip") + x("c", "    bin/navo.exe        Different") + x("add", "+   bin/navo-compare.exe") + x("", "    LICENSE             Same"), "Opens as a folder: zip, 7z, tar") +
+    mini("Document", "spec.pdf", x("", "  page 3") + x("del", "- Timeout is 30 seconds.") + x("add", "+ Timeout is 45 seconds.") + x("", "  text taken out of the file"), "PDF · DOCX as text; Bytes always works") +
+    `</div></div></div>` + status("A file with no known kind opens as Bytes. No pair ever answers “cannot compare”.", "<kbd>Alt+V</kbd> switch the view"),
+  select: () => titlebar(TABS) + `<div class="body" style="position:relative"><div class="col"><div class="head">${pills}<span class="crumb">› <b>Folders</b></span><span class="grow"></span>${filter}</div>
+    <div class="mark"><span class="tagm">L</span><span class="mono">crates/navo-compare/src/bytes</span><span class="faint">↔</span><span class="tagm">R</span><span class="mono">crates/navo-compare/src/text</span><span class="muted">Two folders marked that do not share a name.</span><span class="grow"></span><button class="btn2">Compare these two folders</button></div>
+    ${pickTree([1, 2, 3, 4, 5, 6])}</div>
+    <div class="act"><span><b style="font-weight:500">2 selected</b> <span class="muted">· 1 folder with 4 files inside · 1 file</span></span><button class="primary">Compare only these</button><button class="btn2">Stream</button><button class="btn2">Copy to right →</button><button class="btn2">Ignore</button></div></div>` +
+    status("<kbd>Space</kbd> tick · <kbd>Shift+↓</kbd> range · a ticked folder takes everything inside it, at any depth", "<kbd>Ctrl+L</kbd> mark left · <kbd>Ctrl+R</kbd> mark right"),
+  speed: () => titlebar(tab("builds · ecu-4.2 ↔ ecu-4.3", true)) + `<div class="body"><div class="col"><div class="head"><span class="pill"><span class="k">L</span><span class="mono">D:\\builds\\ecu-4.2</span></span><span class="swap">⇄</span><span class="pill"><span class="k">R</span><span class="mono">D:\\builds\\ecu-4.3</span></span><span class="grow"></span>
+    <span class="stages"><span class="stg done">✓ Listed 180 412</span><span class="stg done">✓ Size and time</span><span class="stg run">Content 62 % <span class="prog"><b></b></span></span><button class="btn2">Stop checking</button></span></div>
+    <div class="head" style="color:var(--muted);font-size:12px"><span>12 workers</span><span>·</span><span>visible rows first</span><span>·</span><span>171 902 files known from last time, not read again</span><span>·</span><span>1.4 GB/s</span><span class="grow"></span><span>You can open, filter and copy while it runs.</span></div>
+    <div class="sect" style="padding:10px 12px 2px">Speed budget · targets the release must meet, measured on every build</div>
+    <div class="bud"><span class="hd">Step</span><span class="hd">Target</span><span class="hd">How</span>
+    <span>Window on screen</span><span class="t">under 300 ms</span><span>nothing loads before the first frame</span>
+    <span>First rows of a folder compare</span><span class="t">under 100 ms</span><span>rows stream in as both sides are listed</span>
+    <span>200 000 files by size and time</span><span class="t">under 2 s</span><span>both sides listed in parallel</span>
+    <span>The same folders, second time</span><span class="t">under 1 s</span><span>hash cache: only changed files are read</span>
+    <span>File diff, up to 1 MB</span><span class="t">under 50 ms</span><span>whole-file diff on a worker</span>
+    <span>Two 1 GB logs, first screen</span><span class="t">under 1 s</span><span>top aligned first, the rest fills in</span>
+    <span>Two 1 GB binaries, hex view</span><span class="t">under 200 ms</span><span>read by blocks, never all in memory</span>
+    <span>Scrolling, any file</span><span class="t">60 frames/s</span><span>rows are built for the screen only</span></div></div></div>` +
+    status("These numbers are targets, not measurements.", "A step that runs long shows a simpler result and says so; it never hangs."),
+  text: () => titlebar(tab("Two texts", true) + tab("navo · v0.6.0 ↔ main", false)) + `<div class="body"><div class="col"><div class="head"><span class="crumb"><b>Compare two texts</b> <span class="faint">nothing is saved to disk</span></span><span class="grow"></span>${diffRules}</div>
+    <div class="diff"><div class="pane"><div class="ph"><span>Left</span><span class="grow"></span><span class="chip">Paste <kbd>Ctrl+1</kbd></span><span class="chip">From file…</span></div>${sideLines("l")}</div>
+    <div class="pane"><div class="ph"><span>Right</span><span class="grow"></span><span class="chip">Paste <kbd>Ctrl+2</kbd></span><span class="chip">From file…</span></div>${sideLines("r")}</div>${map}</div></div></div>` +
+    status("The diff updates as you type or paste", "4 changes", "<kbd>Ctrl+S</kbd> save a side as a file"),
+};
+
 const NOTES = {
   a: ["<b>A · Centru.</b> Aspectul actual al Navo. Două câmpuri pe o linie, sesiuni recente și numite dedesubt, taburi sus.", "Arbore aliniat stânga–dreapta cu starea pe mijloc; antet pe o linie cu părțile, regulile și filtrul.", "Cea mai apropiată de ce există azi în Navo."],
   b: ["<b>B · Bară laterală.</b> Aspectul actual al Navo. Sesiunile deschise, recente și numite stau mereu în stânga; fără taburi sus.", "Sub arbore, o fâșie arată prima schimbare a fișierului selectat. În file diff, bara listează fișierele schimbate.", "Regulile se aleg înainte de comparare, pe ecranul de start."],
@@ -359,19 +439,25 @@ const NOTES = {
   d: ["<b>D · Două părți, două culori.</b> Liber. Stânga și dreapta au fiecare culoarea ei, de la ecranul de start până la diff.", "După comparare se deschide direct Stream-ul (ca un code review); arborele e la un clic.", "Culorile spun de pe ce parte vine linia, nu „șters” sau „adăugat”."],
 };
 const DIRS = [["a", "A"], ["b", "B"], ["c", "C"], ["d", "D"]];
-const SCREENS = [["start", "Start"], ["folders", "Foldere"], ["diff", "File diff"]];
+const SCREENS = [["start", "Start"], ["folders", "Foldere"], ["diff", "File diff"], ["select", "Selecție"], ["types", "Orice fișier"], ["speed", "Viteză"], ["text", "Două texte"]];
+const SHARED_NOTES = {
+  select: ["<b>Selecție.</b> Bifezi foldere și fișiere; un folder bifat ia tot ce are înăuntru, la orice adâncime. „Compare only these” restrânge compararea la ele.", "Poți marca două foldere cu nume diferite (unul pe stânga, unul pe dreapta) și le compari direct între ele, cu tot conținutul.", "Ecran comun: arată la fel în toate direcțiile, doar culorile se schimbă."],
+  types: ["<b>Orice fișier.</b> Fiecare tip primește vederea potrivită: text, structurat, tabel, imagine, octeți, fișiere embedded, arhive, documente.", "Un tip necunoscut se deschide ca octeți. Nicio pereche nu răspunde „nu se poate compara”.", "Există azi: text, octeți, imagine. Restul sunt propuneri pentru etapele Compare 2–3."],
+  speed: ["<b>Viteză.</b> Compararea nu blochează niciodată: rândurile apar pe măsură ce sunt listate, verificarea de conținut rulează în fundal, rândurile vizibile întâi.", "A doua comparare a acelorași foldere citește doar fișierele schimbate (cache de hash).", "Cifrele din tabel sunt ținte din plan, nu măsurători. Fiecare build le măsoară."],
+  text: ["<b>Două texte.</b> Lipești două texte și vezi diferențele pe loc, fără fișiere.", "Diff-ul se actualizează în timp ce scrii.", "Ecran comun pentru toate direcțiile."],
+};
 let state = { dir: "a", screen: "start" };
 
 /** Draws the pickers, the window and the notes for the current state. */
 function render() {
   const win = document.getElementById("win");
   win.dataset.dir = state.dir;
-  win.innerHTML = VIEWS[state.dir][state.screen]();
+  win.innerHTML = (VIEWS[state.dir][state.screen] || SHARED[state.screen])();
   const seg = (id, items, key) => {
     document.getElementById(id).innerHTML = items.map(([v, label]) => `<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${state[key] === v}">${label}</button>`).join("");
   };
   seg("dirs", DIRS, "dir"); seg("screens", SCREENS, "screen");
-  document.getElementById("notes").innerHTML = NOTES[state.dir].map((n) => `<li>${n}</li>`).join("");
+  document.getElementById("notes").innerHTML = (SHARED_NOTES[state.screen] || NOTES[state.dir]).map((n) => `<li>${n}</li>`).join("");
 }
 document.querySelector(".bar").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-k]");
@@ -382,7 +468,7 @@ document.querySelector(".bar").addEventListener("click", (e) => {
 });
 /** Reads "#a-start" style hashes so a view can be linked. */
 function fromHash() {
-  const m = /^#([abcd])-(start|folders|diff)$/.exec(location.hash);
+  const m = /^#([abcd])-(start|folders|diff|select|types|speed|text)$/.exec(location.hash);
   if (m) state = { dir: m[1], screen: m[2] };
   render();
 }

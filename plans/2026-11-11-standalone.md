@@ -66,6 +66,20 @@ Final. Workers never reopen them; a worker that finds one wrong stops and report
 - **NC13 — Release.** Own version line, starting at 0.1.0, and own tags and GitHub releases in this repo. Its `release.yml` builds `navo-compare.exe` and packs it as Velopack id `NavoCompare` with its own Setup and portable zip. Navo's installer does not install it. The Windows VM gates each release. Toolchain and lints match `navo` (Rust 1.99.0, edition 2024).
 - **NC14 — Git stays read-only (D3).** No staging, no commits from Navo Compare.
 - **NC15 — Boundary guard.** `cargo xtask check` fails when a file under `compare_screen`, `compare_diff` or `compare_list` names `NavoWindow` or `Browser`. The seam cannot rot between stages.
+- **NC16 — Every pair opens (owner, 2026-11-11: "any type of file").** A view ladder picks the best view a pair has, and the last step always works:
+  1. a kind with its own view: text, image, and later structured (JSON, YAML, XML, TOML), table (CSV, XLSX), embedded (Intel HEX, S-Record, linker map, A2L, DBC), document text (PDF, DOCX);
+  2. an archive opens as a folder;
+  3. anything else, and any file whose own view fails or passes its cap (D20), opens as Bytes (D18).
+  - Alt+V switches between Best view, Text and Bytes on every pair. No pair answers "cannot compare". A kind is detected from content first, then from the name.
+  - Each new kind is one module behind one trait (`PairView`: detect, load, rows), so adding a kind never touches the screens.
+- **NC17 — Speed is a release gate (owner: "extremely fast").** The budgets below are targets. A bench job measures each on every release build in the Windows VM and fails the release when one is missed by more than 10 %; the numbers go in the release notes.
+  - Window on screen under 300 ms; first folder rows under 100 ms; 200,000 files by size and time under 2 s; the same folders again under 1 s (hash cache); file diff up to 1 MB under 50 ms; two 1 GB logs aligned on the first screen under 1 s (D16); two 1 GB binaries in hex under 200 ms (D18); scrolling at 60 frames a second on any file.
+  - Rules that keep it true: nothing loads before the first frame; all reading, hashing and diffing on workers (D24); rows built for the viewport only; a step that runs long falls back and says so (D20); the content check reads visible rows first and never blocks the tree (D19).
+  - The folder numbers are new and unmeasured; the first bench run may move a target, by a Log line, before 0.1 ships.
+- **NC18 — Selecting folders (owner, 2026-11-11).** Either side of a compare can be a folder, and a folder is always compared with everything inside it, at any depth.
+  - In the tree, Space ticks rows and Shift+↓ ticks a range; a ticked folder takes its whole subtree. "Compare only these" narrows the compare to the ticked rows; Stream, Copy and Ignore act on them too.
+  - Ctrl+L and Ctrl+R mark any folder or file as the left or right side, also two that do not share a name or a parent; "Compare these two" opens them as a new tab.
+  - The start screen and the Explorer menu take folders the same way as files; several dropped folders fill left, then right.
 
 ## UX choices for the standalone shell (input to NC-U0)
 
@@ -85,7 +99,10 @@ Order by value for the cost. Items marked P42 are already planned there and are 
 | Stage | Item | Notes |
 | --- | --- | --- |
 | Compare 1 (first standalone) | Standalone exe, start screen, folder tree, tabs, sessions, CLI with `--wait`, difftool set-up, drag and drop, clipboard compare, Explorer menu, own installer and updates | This plan, Stages 1–2 |
-| Compare 1 | Hide unchanged lines in the file diff; F1 key overlay | small |
+| Compare 1 | Hide unchanged lines in the file diff (also a header chip); F1 key overlay; change counts per row and in the status line | small |
+| Compare 1 | Tick rows and "Compare only these"; mark any two folders or files and compare them (NC18) | medium |
+| Compare 1 | View ladder with Bytes as the floor (NC16); speed bench gate (NC17) | medium |
+| Compare 2 | Document text compare for PDF and DOCX (on `navo-pdf`) | medium |
 | Compare 2 | Three-way merge with automatic base (P42 Part M); `mergetool` contract | P42 |
 | Compare 2 | Moved blocks (P42 V44+); live working-copy compare (C-live); open `.patch`/`.diff` (C-patch) | P42, research picks |
 | Compare 2 | Reports: HTML and unified patch export of a file diff, a Stream or a folder compare; headless `--report` | new |
@@ -181,3 +198,4 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 - 2026-11-11 — Owner: ship the standalone now, as a separate exe, with its own data, also usable as a Navo module; UX and design are the orchestrator's choice (D114). Plan drafted at `origin/main@14a57fd6`. NC-R0 started. Nothing built: V41b–V42 are landing in the same files (R1).
 - 2026-11-11 — Owner: a new repository for the app; do not commit this work into `navo` now. Repo `navo-compare` created (private), plan moved here, NC2 rewritten for two repositories, NC13 for an own version line. `navo` is untouched.
 - 2026-11-11 — NC-R0 back, partial (tool budget ran out; UX of start screens and editors' diff views unchecked). Added the Research section, the console launcher to NC9, tool contracts to NC10, and three feature rows.
+- 2026-11-11 — Owner: more ideas in the design; compare must be extremely fast and work on any kind of file; folders can be selected and compared with their contents. Added NC16 (view ladder), NC17 (speed gate, targets unmeasured), NC18 (selection and marks). Prototype `design/prototypes/shell-directions.html` gained the screens Selection, Every kind of file, Speed and Two texts. The visual research (NC-U0) came back; its two new ideas (change counts, a Hide unchanged chip) are in the prototype. The owner has not picked a direction yet.
