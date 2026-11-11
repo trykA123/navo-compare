@@ -1,8 +1,8 @@
 # Navo Compare · standalone app and module
 
-Status: drafting (Stage 0 ready; Stage 1 briefs wait for V41b–V42 of P42) · Repos: `navo-compare` (this one, the app) and `navo` (the shared compare code) · Branch: `nc-<atom>` per atom · Base: `navo` `origin/main@14a57fd6`; this repo `main` · Started: 2026-11-11
+Status: running (Stage 0 done; Stage 2 wave 1 ready in `plans/2026-11-11-shell.md`; Stage 1 briefs wait for V41b–V42 of P42) · Repos: `navo-compare` (this one, the app) and `navo` (the shared compare code) · Branch: `nc-<atom>` per atom · Base: `navo` `origin/main@14a57fd6`; this repo `main` · Started: 2026-11-11
 
-Not in scope: no fork of the compare code, no new compare engine work (P42 keeps Parts V, M and Y), no network or cloud sides, no AI features.
+Not in scope: no fork of the compare code, no new compare engine work (P42 keeps Parts V, M and Y; the merge screen is designed here, NC37), no network or cloud sides, no AI features.
 
 ## Goal
 
@@ -80,6 +80,62 @@ Final. Workers never reopen them; a worker that finds one wrong stops and report
   - In the tree, Space ticks rows and Shift+↓ ticks a range; a ticked folder takes its whole subtree. "Compare only these" narrows the compare to the ticked rows; Stream, Copy and Ignore act on them too.
   - Ctrl+L and Ctrl+R mark any folder or file as the left or right side, also two that do not share a name or a parent; "Compare these two" opens them as a new tab.
   - The start screen and the Explorer menu take folders the same way as files; several dropped folders fill left, then right.
+- **NC19 — Shell direction: A, with two parts of B (orchestrator; the owner delegated the pick, 2026-11-11).** The app keeps Navo's current look: same tokens, same font, red and green for removed and added.
+  - From A: tabs on top; the start screen with two side fields and Recent and Named under them; the aligned tree with the status in the middle; the one-line header.
+  - From B: the preview strip under the tree (Space shows it; hidden until asked, D58) and the list of changed files in the file diff, as the left drawer (Ctrl+B).
+  - From the research: change counts per row and the "Hide unchanged" header chip.
+  - The shared screens (Selection, Every kind of file, Speed, Two texts) are built as the prototype shows them.
+  - Lost: B's fixed sidebar (it takes about 215 px from a side-by-side diff, and NC8 already chose tabs); C and D (another font and hue; D changes what the colours mean, so the module inside Navo and the app would look different).
+- **NC20 — Threat model.** Trusted: the user, the installed files, the profile folder. Untrusted: every file, folder and archive that is compared; every Git repository; command-line arguments and instance messages; the update feed until its package check passes. Out of scope: an attacker who already runs code as the same user, or as an administrator. Every rule in NC21–NC26 names a test, and Stage 2 is not done without them.
+- **NC21 — Git runs only through `navo-git`.** At the base, `navo-git/src/trust.rs` turns fsmonitor off, neutralises filters, external diff and textconv programs, and reports a folder Git does not trust. The app never starts `git` any other way.
+  - A repository that fails the trust check is compared as plain folders, with the reason in the header.
+  - A `repo@rev` rev is refused when it is empty, starts with `-`, holds a control character or is longer than 256 bytes.
+  - "Use as Git difftool" writes only the global config, after the confirm dialog (NC10).
+  - Test: a fixture repository whose config names a program that writes a marker file; after a full compare the marker does not exist.
+- **NC22 — Limits for every view (extends NC16 and D20).** Each `PairView` declares caps: input bytes, decoded bytes, nesting depth, entry count and time. A view never allocates from a size written in the file before it checks the cap.
+  - A pair that passes a cap steps down the ladder to Bytes with a notice; it never aborts the app.
+  - Archive entries are read in memory or as streams, never extracted to disk. An entry name with `..`, an absolute path or a drive letter is listed as text and never used as a path.
+  - Each parser gets a fuzz target before its kind ships: a 60 s run in the gate, a longer run before a release.
+- **NC23 — Instance channel.** The app uses Navo's instance transport unchanged. At the base it already limits the pipe to the current user (`instance/windows_security.rs`), rejects remote clients and takes the first-instance flag (`instance/windows_pipe.rs`). This repo forbids `unsafe`, so the transport comes from `navo` as a crate (atom N9), not as a copy.
+  - A message carries at most 256 arguments and 64 KiB; a larger one is refused with exit code 2.
+  - Arguments from the channel go through the same parser as the command line. No argument can run a program, write a file or change a setting; a message can only open tabs.
+- **NC24 — Updates and signing.** Facts: this repository is private, so an installed app cannot read its releases without a secret; Navo's `release.yml` does not sign the exe.
+  - No token or key is ever built into the app.
+  - Pending, owner decides before the release atom runs: (1) open the repository, (2) publish releases to a public release-only repository, or (3) no self-update while private. Without an answer, 0.1 ships as (3): the installer and a download link, no update check.
+  - Authenticode signing is pending with the same deadline (a certificate costs money). Until then the release notes carry the SHA-256 of every file, and the README says that SmartScreen warns.
+- **NC25 — Links.** A folder compare does not follow symlinks, junctions or other reparse points. A link is one row of kind Link, compared by its target text.
+  - A per-session rule "Follow links" follows them, with a set of visited file identities that stops loops.
+  - Copy never writes through a link: the resolved destination must stay under the side's root, else the copy is refused with the reason.
+  - Tests: a junction that points to its own parent; a junction that points outside the root.
+- **NC26 — Private data.** No telemetry. The only network call the app makes is the update check (NC24); Git is never asked to fetch.
+  - Crash reports stay in the profile's `crashes/` folder; sending one is a manual step.
+  - Logs hold paths, never file content; five files of 2 MiB.
+  - "Two texts" never reaches the disk: not in sessions, not in logs, not in crash reports.
+  - "Remember recent compares" is a setting, with "Clear now". The journal's held files follow the `navo-retention` limits and show their size in Settings, with "Clear now".
+- **NC27 — Format versions.** Every file the app writes carries a `version`: `settings.toml`, `profile.toml`, each `sessions/*.toml`.
+  - Same version: load. Older: migrate in memory, write on the next save, keep one `*.bak-v<N>`. Newer: load what is known, never write the file, show a notice.
+  - `CacheDb` keeps its own migrations (`cache_db/migrations.rs`). A newer cache is renamed aside and rebuilt. A newer journal turns Undo off and keeps the held files.
+  - Each file has a downgrade test.
+- **NC28 — Memory budgets, gated with NC17.** Targets, unmeasured: the empty window under 150 MB; a 200,000-file folder compare under 400 MB; each extra idle tab under 20 MB; a 1 GB pair inside the D17 step. A tab in the background for 60 s drops its row layouts, decoded images and view caches and keeps its model. The first bench run may move a target, by a Log line.
+- **NC29 — One scheduler for all tabs.** One worker pool per process (D24). Order: the visible tab's viewport, then the rest of the visible tab, then background tabs.
+  - Closing a tab or changing a side cancels its jobs; a job checks for cancel at every file and every 1 MiB.
+  - One reader at a time on a rotational or network volume, several on an SSD; a setting overrides the guess.
+  - A network read that times out makes the row "Unavailable"; F5 tries again.
+- **NC30 — Hash cache rules.** At the base the key is provider, path, size, modified time and file identity (`ContentKey`), with a 16 MiB budget. Added: a file modified less than 2 s before it was hashed is not cached (the racy-timestamp rule Git uses); a path with no file identity can be forced to re-read with the session rule "Always re-read".
+- **NC31 — Results that went stale.** Every compared pair keeps the stamp of both sides (size, modified time, file identity). Before a diff opens, a copy runs or a save writes, the stamps are checked again.
+  - A mismatch marks the row "Changed on disk" and compares that row again; a copy is refused (D9).
+  - Compare 1 re-checks the visible rows on F5 and when the window gets focus. Live watching is Compare 2 (C-live). A refresh never moves the cursor.
+- **NC32 — Pin canary and lock drift.** A manual CI job builds and tests this repo against the head of `navo` main and only reports. `cargo xtask lock-drift` fails when a crate that both lockfiles hold has two versions. `[patch.crates-io] gpui-pre-windows` is repeated here at the pinned rev, because a patch does not pass through a dependency.
+- **NC33 — Bench method (refines NC17).** Data comes from a seeded generator, `cargo xtask bench-data`: set S (2,000 files), M (200,000 files), L (two 1 GiB logs, two 1 GiB binaries). Runs happen in the Windows VM with the EDR profile off: five runs, the median, cold and warm cache named apart. A missed budget runs once more; two misses fail the release.
+- **NC34 — Saving.** Every write goes through `navo-fs`: a temp file in the same folder, an atomic replace, the stamp check (D9), the old version in the journal. A save keeps the file's encoding, BOM and line endings, also mixed ones. A read-only file, or `--read-only`, has no write commands. Test: a UTF-16 LE file with BOM and CRLF survives an edit and a save byte for byte outside the edit.
+- **NC35 — Accessibility.** Every action has a key; focus is always visible; a status is a word and a shape, never colour alone; each text and background pair passes the contrast tool; the app follows the Windows text scale and has a high-contrast theme; reduced motion removes the fades. Screen-reader support follows Navo's GPUI work: it gates 1.0, not 0.1.
+- **NC36 — Platform and uninstall.** Windows 10 22H2 and later, x64, for every 0.x release; Linux builds are host checks only. Everything the app registers is per user, and the installer never needs an administrator. Uninstall removes the exe and the Explorer menu keys, offers to remove the profile, and removes Git config lines only when they still name this exe, after showing them.
+- **NC37 — Merge is in scope, and simple (owner, 2026-11-11: "merge like Beyond Compare, but easy to understand").** Merge moves from Compare 2 to the second release, 0.2; 0.1 ships the two-way part.
+  - Two-way (0.1): each change has "Use left" and "Use right" on the change itself; "Take all from left" and "Take all from right" in the header; Undo on every step. No toolbar of arrows.
+  - Three-way (0.2): the engine and session are P42 Part M (D13: own diff3, the replay oracle). The screen is designed here.
+  - Rules for the screen: one result pane, the only one that is edited; changes that only one side made are taken alone and stay hidden until asked; each conflict is one card with four actions (Use mine, Use theirs, Use both, Edit) and the sides named by branch or file, not "left" and "right"; one counter "N conflicts left"; Save stays off until it is zero; keys 1, 2, 3 choose and F8 goes to the next conflict; a file with conflict markers opens straight in this screen.
+  - A design round (NC-U1) gives four directions for this screen; the owner picks.
+  - Three-way arguments (NC10) stay refused with a clear message until 0.2.
 
 ## UX choices for the standalone shell (input to NC-U0)
 
@@ -103,7 +159,8 @@ Order by value for the cost. Items marked P42 are already planned there and are 
 | Compare 1 | Tick rows and "Compare only these"; mark any two folders or files and compare them (NC18) | medium |
 | Compare 1 | View ladder with Bytes as the floor (NC16); speed bench gate (NC17) | medium |
 | Compare 2 | Document text compare for PDF and DOCX (on `navo-pdf`) | medium |
-| Compare 2 | Three-way merge with automatic base (P42 Part M); `mergetool` contract | P42 |
+| Compare 1 (0.1) | Two-way merge: Use left, Use right on each change; take all from one side; Undo (NC37) | small; the copy and pick code exists |
+| Compare 1 (0.2) | Three-way merge with automatic base (P42 Part M); `mergetool` contract; the simple merge screen (NC37) | P42 engine; screen designed here |
 | Compare 2 | Moved blocks (P42 V44+); live working-copy compare (C-live); open `.patch`/`.diff` (C-patch) | P42, research picks |
 | Compare 2 | Reports: HTML and unified patch export of a file diff, a Stream or a folder compare; headless `--report` | new |
 | Compare 2 | Rules beyond whitespace: per-session regex "ignore lines matching" and "replace before compare" (timestamps, generated ids) | new; the engine's `normalise` is the hook |
@@ -139,6 +196,12 @@ Partial: the researcher's budget ran out. Checked from vendor pages and changelo
 - **R4 — `--wait` that never returns.** The waiting process exits with 2 when the pipe to the main process closes without an answer; a test covers it.
 - **R5 — Installer and update feed for a second app.** Its own Velopack id and its own release feed, so an update of one app never replaces the other. The VM install test runs for it.
 - **R6 — The pin drifts.** A change in `navo` can break this repo unseen. The pin moves only in its own commit, with this repo's gate; `navo`'s boundary guard (NC15) and its compare tests keep the contracts stable.
+- **R7 — A hostile file exhausts memory or crashes the app.** NC22: caps, the step down to Bytes, fuzz targets.
+- **R8 — A hostile repository starts a program.** NC21: one trusted path to Git, with the marker test.
+- **R9 — A secret in the app, or an update nobody can check.** NC24: no built-in token; hashes in the release notes until signing exists.
+- **R10 — A copy writes outside the compared folder through a link.** NC25.
+- **R11 — An older app opens a newer profile and loses data.** NC27: never write a newer file.
+- **R12 — Merge grows into a second Beyond Compare.** NC37 fixes the rules of the screen; anything beyond them is a new decision.
 - **Rollback.** Stage 1: revert the squash commit of an atom. Stage 2: the new crate and its release step are additive; removing the release step unships it.
 
 ## Components
@@ -169,7 +232,8 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 | **Stage 0 — this repo, no shared files** | | | | | | | |
 | NC-G0 | repo scaffold: workspace, toolchain, lints, `.gitignore`, README, a `--version` stub (gate script and CI come with Stage 2) | orchestrator | — | — | `cargo build`, `cargo fmt --check`, `cargo clippy`; private repo on GitHub | done | |
 | NC-R0 | competitor research | researcher (Haiku) | xhigh | — | report with sources | done, partial (see Research) | |
-| NC-U0 | shell design round: start screen, header, folder tree, tabs, clipboard compare; its researcher step gathers the start screens the first research missed | designer (Sonnet) | medium | NC-R0 | 4 directions behind one picker, both themes, 390 px and desktop | todo | |
+| NC-U0 | shell design round: start screen, header, folder tree, tabs, clipboard compare; its researcher step gathers the start screens the first research missed | designer (Sonnet) | medium | NC-R0 | 4 directions behind one picker, both themes, 390 px and desktop | done; NC19 picks A with two parts of B | |
+| NC-U1 | merge screen design round (NC37): two-way actions and the three-way screen | designer (Sonnet) | medium | NC19 | 4 directions behind one picker, both themes; owner picks | todo | |
 | **Stage 1 — seams, in `navo` (after V42 is on main)** | | | | | | | |
 | N0 | Stage 1 briefs | architect (Opus) | high | V42 merged | briefs N1–N8 in this file; plan check by `reviewer` | blocked | |
 | N1b | compare service as a library (NC2b) | api-builder (Sonnet) | high | N0 | `cargo xtask check -p navo-app` and the new crate | blocked | |
@@ -181,16 +245,19 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 | N6 | entity: large, hex, image | ui-builder (Sonnet) | high | N4 | `…compare_large compare_hex compare_image` | blocked | |
 | N7 | entity: copy, picks, sheet, menus, drawers | ui-builder (Sonnet) | high | N4 | `…compare_copy compare_sheet` | blocked | |
 | N8 | compare key fragment; boundary guard | patcher (Sonnet) | medium | N5, N6, N7 | `cargo nextest run -p navo-ui commands`; `cargo xtask check` red on the fixture | blocked | |
+| N9 | `navo-instance` crate: `navo-app/src/instance` moved unchanged, public API for a second app name (NC23) | api-builder | medium | N0 | `cargo xtask check -p navo-app` and the new crate; VM instance tests | blocked | |
 | NR1 | review Stage 1; VM compare pass | reviewer-senior (Opus) + tester | medium | N8 | verdict; gate; Windows VM CI | blocked | |
 | **Stage 2 — standalone 0.1 (own plan)** | | | | | | | |
-| S2 | `FolderTree`, `CompareWindow`, start screen, sessions, profile, CLI and instance, clipboard compare, Explorer menu, release packaging | — | — | NR1, NC-U0 | own plan | todo | |
+| S2 | `FolderTree`, `CompareWindow`, start screen, sessions, profile, CLI and instance, clipboard compare, Explorer menu, release packaging | — | — | wave 1: none; the rest: NR1 | `plans/2026-11-11-shell.md` | wave 1 ready | |
+| S2m | three-way merge screen (NC37), release 0.2 | — | — | NC-U1, P42 M1–M5 | own plan (`…-merge.md`) | todo | |
 | **Stage 3 — own crates (own plan)** | | | | | | | |
 | S3 | `navo-ui-base`, `navo-compare-ui`, `navo-compare-service` | — | — | S2 shipped | own plan | todo | |
 
 ## Done when
 
 - Stage 1: no file under `compare_screen`, `compare_diff` or `compare_list` names `NavoWindow` or `Browser` (the guard proves it); Navo's compare tests pass unchanged; the VM compare pass finds no change in behaviour.
-- Stage 2: on a Windows VM without Navo, `Navo-Compare-Setup.exe` installs; `navo-compare <dirA> <dirB>` opens the folder tree, the Stream and a file diff; copy one change and Ctrl+Z work; `git difftool -d` and `git difftool` open it and return when the tab closes; it updates itself from the feed.
+- Stage 2: on a Windows VM without Navo, `Navo-Compare-Setup.exe` installs; `navo-compare <dirA> <dirB>` opens the folder tree, the Stream and a file diff; copy one change and Ctrl+Z work; `git difftool -d` and `git difftool` open it and return when the tab closes; it updates itself from the feed when NC24 allows one.
+- Stage 2, safety: the hostile-repository fixture leaves no marker (NC21); a junction loop ends and a junction that leaves the root is never written through (NC25); a newer session or settings file is never overwritten (NC27); with the network off the app starts and compares with no error and no wait (NC26); the bench prints time and memory for sets S, M and L (NC17, NC28, NC33).
 - Stage 3: `cargo tree -p navo-compare-app` lists no `navo-ui`; Navo still embeds compare; both gates and VM CI pass.
 
 ## Log
@@ -199,3 +266,4 @@ Stage 0 runs now. Stage 1 briefs are written by N0 at the base that contains V42
 - 2026-11-11 — Owner: a new repository for the app; do not commit this work into `navo` now. Repo `navo-compare` created (private), plan moved here, NC2 rewritten for two repositories, NC13 for an own version line. `navo` is untouched.
 - 2026-11-11 — NC-R0 back, partial (tool budget ran out; UX of start screens and editors' diff views unchecked). Added the Research section, the console launcher to NC9, tool contracts to NC10, and three feature rows.
 - 2026-11-11 — Owner: more ideas in the design; compare must be extremely fast and work on any kind of file; folders can be selected and compared with their contents. Added NC16 (view ladder), NC17 (speed gate, targets unmeasured), NC18 (selection and marks). Prototype `design/prototypes/shell-directions.html` gained the screens Selection, Every kind of file, Speed and Two texts. The visual research (NC-U0) came back; its two new ideas (change counts, a Hide unchanged chip) are in the prototype. The owner has not picked a direction yet.
+- 2026-11-11 — Owner delegated the direction pick: NC19 (A, with the preview strip and the changed-files drawer from B). Owner asked for the architecture, system-design and security gaps in the plan: NC20–NC36, R7–R11, the Stage 2 safety lines in Done when, atom N9. Checked at the base before writing: Git trust handling, the pipe limits and the cache key and migrations already exist in `navo`, so NC21, NC23, NC27 and NC30 reuse them and add only what is missing. Owner asked for merge, simple to read: NC37, R12, NC-U1, S2m. Prototype checked at 1440 px and 390 px in both themes; the picker now wraps at phone width. Stage 2 plan written: `plans/2026-11-11-shell.md`. No agent started: the owner asked to be told first.
