@@ -1,4 +1,4 @@
-//! Entry point of Navo Compare. `--version` prints the version; otherwise one empty window
+//! Entry point of the app (its name is in `navo_compare_profile::brand`). `--version` prints the version; otherwise one empty window
 //! opens (spike U0; the screens arrive with Stage 2 of `plans/2026-11-11-standalone.md`).
 
 mod window;
@@ -11,7 +11,11 @@ use std::process::ExitCode;
 fn main() -> ExitCode {
     let wants_version = std::env::args().skip(1).any(|arg| arg == "--version");
     if wants_version {
-        println!("navo-compare {}", env!("CARGO_PKG_VERSION"));
+        println!(
+            "{} {}",
+            navo_compare_profile::brand::SLUG,
+            env!("CARGO_PKG_VERSION")
+        );
         return ExitCode::SUCCESS;
     }
     window::run()

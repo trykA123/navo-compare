@@ -7,7 +7,7 @@ Status: planning. The plan is `plans/2026-11-11-standalone.md`.
 
 ## Layout
 
-- `crates/navo-compare-app`: the app (the `navo-compare` binary).
+- `crates/navo-compare-app`: the app (the `sidewise` binary).
 - `plans/`: plans, one file per piece of work.
 - `design/`: prototypes for the app shell.
 
