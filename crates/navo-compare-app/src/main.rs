@@ -1,6 +1,8 @@
 //! Entry point of the app (its name is in `navo_compare_profile::brand`). `--version` prints the version;
 //! otherwise the window opens with the shell (tabs and the start screen).
 
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod shell;
 #[cfg(test)]
 mod shell_tests;
@@ -13,6 +15,9 @@ mod start_tests;
 mod start_view;
 #[cfg(test)]
 mod test_window;
+mod theme;
+#[cfg(test)]
+mod theme_tests;
 mod window;
 
 use std::process::ExitCode;

@@ -69,7 +69,7 @@ impl StartScreen {
     /// The row of both fields with the swap and Compare buttons.
     fn fields_row(&self, cx: &Context<Self>) -> impl IntoElement {
         let t = tokens::current(cx);
-        let swap = IconButton::new("start-swap", IconName::Replace, "Swap sides")
+        let swap = IconButton::new("start-swap", IconName::ArrowLeftRight, "Swap sides")
             .on_click(cx.listener(|this, _, window, cx| this.swap(window, cx)));
         let compare = Button::new("start-compare", "Compare")
             .variant(ButtonVariant::Primary)

@@ -2,7 +2,7 @@
 //! It owns the tab list and the browser-style tab keys (NS11, NS15, NS16).
 
 use gpui_kit::assets::IconName;
-use gpui_kit::{FocusHandle, KeyBinding};
+use gpui_kit::{FocusHandle, KeyBinding, Subscription};
 use navo_compare_profile::brand;
 use navo_compare_profile::recent::StartRows;
 use navo_ui::NavoTitleBar;
@@ -11,6 +11,7 @@ use navo_ui::primitives::{IconButton, Kbd, Tab, Tabs};
 use navo_ui::tokens;
 
 use crate::start::{self, StartScreen};
+use crate::theme::mode_of;
 
 gpui_kit::actions!(shell, [NewTab, CloseTab, NextTab, PrevTab]);
 
@@ -37,6 +38,7 @@ pub struct Shell {
     tabs: Vec<ShellTab>,
     active: usize,
     handle: FocusHandle,
+    _appearance: Subscription,
 }
 
 /// Binds the tab keys in the `Shell` context and the start screen's keys;
@@ -63,11 +65,18 @@ fn start_tab(window: &mut Window, cx: &mut Context<Shell>) -> ShellTab {
 
 impl Shell {
     /// Makes a shell with one start tab and focuses that tab's left field.
+    /// It applies the token mode of the window's appearance and follows later changes (NS19).
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        tokens::apply(mode_of(window.appearance()), cx);
+        let appearance = cx.observe_window_appearance(window, |_, window, cx| {
+            tokens::apply(mode_of(window.appearance()), cx);
+            cx.notify();
+        });
         let shell = Self {
             tabs: vec![start_tab(window, cx)],
             active: 0,
             handle: cx.focus_handle(),
+            _appearance: appearance,
         };
         shell.activated(window, cx);
         shell
