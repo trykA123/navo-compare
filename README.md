@@ -1,4 +1,4 @@
-# Navo Compare
+# Sidewise
 
 A standalone compare and merge app for folders, files and Git refs. It is built from the same
 compare code as [Navo](https://github.com/trykA123/navo), where compare also runs as a module.

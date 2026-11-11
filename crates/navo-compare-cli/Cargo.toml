@@ -1,4 +1,4 @@
-# Command line of Navo Compare: argument parser, side specs and exit codes. No GUI.
+# Command line of Sidewise: argument parser, side specs and exit codes. No GUI.
 [package]
 name = "navo-compare-cli"
 version.workspace = true

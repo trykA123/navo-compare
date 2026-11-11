@@ -1,4 +1,4 @@
-//! The main window of Navo Compare: one themed, empty window (spike U0, before the screens).
+//! The main window of Sidewise: one themed, empty window (spike U0, before the screens).
 
 use navo_compare_profile::brand;
 use navo_ui::prelude::*;

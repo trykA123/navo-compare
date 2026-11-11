@@ -1,4 +1,4 @@
-# Profile of Navo Compare: brand names, folders, format versions and the sessions store. No GUI.
+# Profile of Sidewise: brand names, folders, format versions and the sessions store. No GUI.
 [package]
 name = "navo-compare-profile"
 version.workspace = true

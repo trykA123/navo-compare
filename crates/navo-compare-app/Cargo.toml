@@ -1,4 +1,4 @@
-# The Navo Compare desktop app: window shell, start screen, sessions and command line.
+# The Sidewise desktop app: window shell, start screen, sessions and command line.
 [package]
 name = "navo-compare-app"
 version.workspace = true

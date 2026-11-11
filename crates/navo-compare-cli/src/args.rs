@@ -1,4 +1,4 @@
-//! Argument parser for Navo Compare: flags, side specs and exit codes.
+//! Argument parser for Sidewise: flags, side specs and exit codes.
 //! It is pure: the caller supplies the test for "this path exists".
 //! The app and the console launcher both call `parse`.
 
