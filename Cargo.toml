@@ -1,7 +1,8 @@
 # Workspace of Navo Compare, the standalone compare and merge app.
 [workspace]
 resolver = "3"
-members = ["crates/navo-compare-app"]
+members = ["crates/*", "xtask"]
+default-members = ["crates/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -12,6 +13,29 @@ license = "MIT OR Apache-2.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
+unused_must_use = "deny"
 
 [workspace.lints.clippy]
-all = { level = "warn", priority = -1 }
+all = { level = "deny", priority = -1 }
+allow_attributes_without_reason = "deny"
+dbg_macro = "deny"
+excessive_nesting = "deny"
+expect_used = "deny"
+panic = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+todo = "deny"
+too_many_arguments = "deny"
+too_many_lines = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+debug = "line-tables-only"
+strip = "none"
+panic = "unwind"

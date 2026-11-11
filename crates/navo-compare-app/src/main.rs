@@ -5,6 +5,11 @@ use std::process::ExitCode;
 
 /// Prints the version for `--version`; any other call says that the app is not built yet.
 /// Returns exit code 0 for `--version` and 2 otherwise.
+#[expect(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    reason = "command-line output: the version line and the not-built notice"
+)]
 fn main() -> ExitCode {
     let wants_version = std::env::args().skip(1).any(|arg| arg == "--version");
     if wants_version {

@@ -1,0 +1,15 @@
+# Profile of Navo Compare: brand names, folders, format versions and the sessions store. No GUI.
+[package]
+name = "navo-compare-profile"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.2.1"
+
+[lints]
+workspace = true

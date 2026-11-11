@@ -1,0 +1,3 @@
+# Cargo settings of this repository: `cargo xtask <command>` runs the developer commands.
+[alias]
+xtask = "run -p xtask --locked --"
