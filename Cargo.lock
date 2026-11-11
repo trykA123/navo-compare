@@ -5772,6 +5772,7 @@ dependencies = [
 name = "navo-compare-app"
 version = "0.1.0"
 dependencies = [
+ "embed-resource",
  "gpui-kit",
  "navo-compare-cli",
  "navo-compare-profile",
