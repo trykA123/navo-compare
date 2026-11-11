@@ -37,7 +37,7 @@ pub enum Action {
 }
 
 /// One side the user named: a path, or a repository at a revision.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SideSpec {
     Path(PathBuf),
     GitRev { repo: PathBuf, rev: String },
@@ -322,7 +322,7 @@ fn scan(args: &[OsString]) -> Scan {
 
 /// Parses one side: an existing whole path, else `repo@rev` from the right, else a path.
 /// Fails with `BadRev` when a selected revision breaks NC21.
-fn side(text: &str, cwd: &Path, exists: &dyn Fn(&Path) -> bool) -> Result<SideSpec, ArgError> {
+pub fn side(text: &str, cwd: &Path, exists: &dyn Fn(&Path) -> bool) -> Result<SideSpec, ArgError> {
     let whole = cwd.join(text);
     if exists(&whole) {
         return Ok(SideSpec::Path(whole));
