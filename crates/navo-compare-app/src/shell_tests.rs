@@ -4,6 +4,7 @@ use gpui_kit::test::TestWindowExt;
 use gpui_kit::{AnyWindowHandle, AppContext as _, Entity, TestAppContext};
 
 use crate::shell::Shell;
+use crate::start::Side;
 use crate::test_window::open;
 
 /// Opens a shell in a test window and renders one frame.
@@ -152,15 +153,17 @@ fn the_first_tab_has_a_width(cx: &mut TestAppContext) {
 }
 
 #[gpui_kit::test]
-fn the_shell_handle_has_focus_after_a_new_tab(cx: &mut TestAppContext) {
+fn the_new_tabs_left_field_has_focus(cx: &mut TestAppContext) {
     let s = shell(cx);
     act(cx, &s, |shell, window, cx| shell.new_tab(window, cx));
-    let focused = cx
+    let side = cx
         .update_window(s.0, |_, window, cx| {
-            s.1.read(cx).focus_handle().is_focused(window)
+            s.1.read(cx)
+                .active_screen()
+                .and_then(|screen| screen.read(cx).focused_side(window, cx))
         })
         .expect("window");
-    assert!(focused);
+    assert_eq!(side, Some(Side::Left));
 }
 
 #[gpui_kit::test]

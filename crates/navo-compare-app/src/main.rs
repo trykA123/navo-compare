@@ -4,6 +4,11 @@
 mod shell;
 #[cfg(test)]
 mod shell_tests;
+mod start;
+mod start_rows;
+#[cfg(test)]
+mod start_tests;
+mod start_view;
 #[cfg(test)]
 mod test_window;
 mod window;

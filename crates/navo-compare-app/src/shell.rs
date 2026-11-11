@@ -4,10 +4,13 @@
 use gpui_kit::assets::IconName;
 use gpui_kit::{FocusHandle, KeyBinding};
 use navo_compare_profile::brand;
+use navo_compare_profile::recent::StartRows;
 use navo_ui::NavoTitleBar;
 use navo_ui::prelude::*;
 use navo_ui::primitives::{IconButton, Kbd, Tab, Tabs};
 use navo_ui::tokens;
+
+use crate::start::{self, StartScreen};
 
 gpui_kit::actions!(shell, [NewTab, CloseTab, NextTab, PrevTab]);
 
@@ -17,10 +20,10 @@ const CONTEXT: &str = "Shell";
 /// Width of the "+" button at the end of the tab row (NS15).
 const PLUS_WIDTH: f32 = 28.;
 
-/// What a tab shows. Only the start screen exists so far.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+/// What a tab shows. Only the start screen exists so far; each start tab owns its screen.
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum TabKind {
-    Start,
+    Start(Entity<StartScreen>),
 }
 
 /// One tab: the title in the strip and the kind of body it shows.
@@ -36,8 +39,10 @@ pub struct Shell {
     handle: FocusHandle,
 }
 
-/// Binds the tab keys in the `Shell` context; call once after `navo_ui::init`.
+/// Binds the tab keys in the `Shell` context and the start screen's keys;
+/// call once after `navo_ui::init`.
 pub fn bind_keys(cx: &mut App) {
+    start::bind_keys(cx);
     cx.bind_keys([
         KeyBinding::new("ctrl-t", NewTab, Some(CONTEXT)),
         KeyBinding::new("ctrl-w", CloseTab, Some(CONTEXT)),
@@ -46,24 +51,26 @@ pub fn bind_keys(cx: &mut App) {
     ]);
 }
 
-/// A fresh start tab titled "New compare".
-fn start_tab() -> ShellTab {
+/// A fresh start tab titled "New compare", with its own start screen over no stored rows yet.
+fn start_tab(window: &mut Window, cx: &mut Context<Shell>) -> ShellTab {
+    let cwd = std::env::current_dir().unwrap_or_default();
+    let screen = cx.new(|cx| StartScreen::new(StartRows::default(), cwd, window, cx));
     ShellTab {
         title: "New compare".into(),
-        kind: TabKind::Start,
+        kind: TabKind::Start(screen),
     }
 }
 
 impl Shell {
-    /// Makes a shell with one start tab and focuses its handle.
+    /// Makes a shell with one start tab and focuses that tab's left field.
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let handle = cx.focus_handle();
-        handle.focus(window, cx);
-        Self {
-            tabs: vec![start_tab()],
+        let shell = Self {
+            tabs: vec![start_tab(window, cx)],
             active: 0,
-            handle,
-        }
+            handle: cx.focus_handle(),
+        };
+        shell.activated(window, cx);
+        shell
     }
 
     /// Number of open tabs.
@@ -90,21 +97,18 @@ impl Shell {
         self.active
     }
 
-    /// The handle the shell's root element tracks.
-    #[cfg_attr(
-        not(test),
-        expect(
-            dead_code,
-            reason = "read by the view tests; the start screen reads it later"
-        )
-    )]
-    pub fn focus_handle(&self) -> &FocusHandle {
-        &self.handle
+    /// The start screen of the active tab.
+    pub fn active_screen(&self) -> Option<&Entity<StartScreen>> {
+        match self.tabs.get(self.active).map(|tab| &tab.kind) {
+            Some(TabKind::Start(screen)) => Some(screen),
+            None => None,
+        }
     }
 
-    /// Appends a start tab, makes it active and focuses the shell.
+    /// Appends a start tab, makes it active and focuses its left field.
     pub fn new_tab(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        self.tabs.push(start_tab());
+        let tab = start_tab(window, cx);
+        self.tabs.push(tab);
         self.active = self.tabs.len() - 1;
         self.activated(window, cx);
     }
@@ -147,9 +151,12 @@ impl Shell {
         self.select_tab((self.active + count - 1) % count, window, cx);
     }
 
-    /// Focuses the shell (NS16) and redraws after the active tab changed.
+    /// Focuses the active start tab's left field (NS16), else the shell; redraws.
     fn activated(&self, window: &mut Window, cx: &mut Context<Self>) {
-        self.handle.focus(window, cx);
+        match self.active_screen() {
+            Some(screen) => screen.update(cx, |screen, cx| screen.focus_left(window, cx)),
+            None => self.handle.focus(window, cx),
+        }
         cx.notify();
     }
 
@@ -180,13 +187,15 @@ impl Shell {
             .child(tabs)
     }
 
-    /// The active tab's body: empty for a start tab until the start screen exists.
+    /// The active tab's body: the start screen of a start tab.
     fn body(&self, cx: &App) -> impl IntoElement {
         let background = tokens::current(cx).colors.background;
-        let kind = self.tabs.get(self.active).map(|tab| tab.kind);
-        match kind {
-            Some(TabKind::Start) | None => div().flex_1().w_full().min_h_0().bg(background),
-        }
+        div()
+            .flex_1()
+            .w_full()
+            .min_h_0()
+            .bg(background)
+            .children(self.active_screen().cloned())
     }
 
     /// The status line: the key hints; a hint whose key does not parse is left out.
