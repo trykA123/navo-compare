@@ -364,6 +364,9 @@ fn the_shells_start_tab_focuses_its_left_field(cx: &mut TestAppContext) {
     assert_eq!(side(cx), Some(Side::Right));
     cx.simulate_keystrokes(window, "ctrl-t");
     assert_eq!(side(cx), Some(Side::Left));
+    cx.simulate_keystrokes(window, "ctrl-tab");
+    assert_eq!(shell.read_with(cx, |shell, _| shell.active()), 0);
     cx.simulate_keystrokes(window, "ctrl-shift-tab");
+    assert_eq!(shell.read_with(cx, |shell, _| shell.active()), 1);
     assert_eq!(side(cx), Some(Side::Left));
 }

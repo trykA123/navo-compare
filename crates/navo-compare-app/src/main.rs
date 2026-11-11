@@ -1,11 +1,13 @@
-//! Entry point of the app (its name is in `navo_compare_profile::brand`). `--version` prints the version; otherwise one empty window
-//! opens (spike U0; the screens arrive with Stage 2 of `plans/2026-11-11-standalone.md`).
+//! Entry point of the app (its name is in `navo_compare_profile::brand`). `--version` prints the version;
+//! otherwise the window opens with the shell (tabs and the start screen).
 
 mod shell;
 #[cfg(test)]
 mod shell_tests;
 mod start;
 mod start_rows;
+#[cfg(test)]
+mod start_rows_tests;
 #[cfg(test)]
 mod start_tests;
 mod start_view;

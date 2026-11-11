@@ -97,6 +97,17 @@ impl Shell {
         self.active
     }
 
+    /// The start screen entity ids of all tabs, in order (lets tests tell tabs apart).
+    #[cfg(test)]
+    pub(crate) fn tab_ids(&self) -> Vec<gpui_kit::EntityId> {
+        self.tabs
+            .iter()
+            .map(|tab| match &tab.kind {
+                TabKind::Start(screen) => screen.entity_id(),
+            })
+            .collect()
+    }
+
     /// The start screen of the active tab.
     pub fn active_screen(&self) -> Option<&Entity<StartScreen>> {
         match self.tabs.get(self.active).map(|tab| &tab.kind) {
@@ -115,7 +126,8 @@ impl Shell {
 
     /// Closes the tab at `index`; the tab to its right (else the new last) becomes active.
     /// A tab left of the active one keeps the active tab. Closing the last tab closes the window.
-    /// An index out of range does nothing.
+    /// Only closing the active tab moves the focus; closing another tab leaves it. An index out
+    /// of range does nothing.
     pub fn close_tab(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if index >= self.tabs.len() {
             return;
@@ -124,12 +136,17 @@ impl Shell {
             window.remove_window();
             return;
         }
+        let was_active = index == self.active;
         self.tabs.remove(index);
         if index < self.active {
             self.active -= 1;
         }
         self.active = self.active.min(self.tabs.len() - 1);
-        self.activated(window, cx);
+        if was_active {
+            self.activated(window, cx);
+        } else {
+            cx.notify();
+        }
     }
 
     /// Makes the tab at `index` active; an index out of range does nothing.

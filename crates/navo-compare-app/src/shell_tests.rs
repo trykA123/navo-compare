@@ -1,7 +1,7 @@
 //! View tests of the shell: tab rules (NS11), keys, focus and closing the last tab.
 
 use gpui_kit::test::TestWindowExt;
-use gpui_kit::{AnyWindowHandle, AppContext as _, Entity, TestAppContext};
+use gpui_kit::{AnyWindowHandle, AppContext as _, Entity, EntityId, TestAppContext};
 
 use crate::shell::Shell;
 use crate::start::Side;
@@ -33,6 +33,19 @@ fn state(cx: &mut TestAppContext, view: &Entity<Shell>) -> (usize, usize) {
     view.read_with(cx, |shell, _| (shell.tab_count(), shell.active()))
 }
 
+/// The start screen entity ids of all tabs, in order.
+fn ids(cx: &mut TestAppContext, view: &Entity<Shell>) -> Vec<EntityId> {
+    view.read_with(cx, |shell, _| shell.tab_ids())
+}
+
+/// The entity id of the active tab's start screen.
+fn active_id(cx: &mut TestAppContext, view: &Entity<Shell>) -> EntityId {
+    view.read_with(cx, |shell, _| {
+        shell.active_screen().map(|screen| screen.entity_id())
+    })
+    .expect("active start screen")
+}
+
 #[gpui_kit::test]
 fn one_start_tab_at_launch(cx: &mut TestAppContext) {
     let (_, view) = shell(cx);
@@ -54,9 +67,12 @@ fn closing_the_middle_tab_activates_its_right_neighbour(cx: &mut TestAppContext)
         shell.new_tab(window, cx);
         shell.new_tab(window, cx);
         shell.select_tab(1, window, cx);
-        shell.close_tab(1, window, cx);
     });
+    let before = ids(cx, &s.1);
+    act(cx, &s, |shell, window, cx| shell.close_tab(1, window, cx));
     assert_eq!(state(cx, &s.1), (2, 1));
+    assert_eq!(ids(cx, &s.1), [before[0], before[2]]);
+    assert_eq!(active_id(cx, &s.1), before[2]);
 }
 
 #[gpui_kit::test]
@@ -65,9 +81,12 @@ fn closing_the_last_index_activates_the_new_last(cx: &mut TestAppContext) {
     act(cx, &s, |shell, window, cx| {
         shell.new_tab(window, cx);
         shell.new_tab(window, cx);
-        shell.close_tab(2, window, cx);
     });
+    let before = ids(cx, &s.1);
+    act(cx, &s, |shell, window, cx| shell.close_tab(2, window, cx));
     assert_eq!(state(cx, &s.1), (2, 1));
+    assert_eq!(ids(cx, &s.1), [before[0], before[1]]);
+    assert_eq!(active_id(cx, &s.1), before[1]);
 }
 
 #[gpui_kit::test]
@@ -76,9 +95,31 @@ fn closing_a_tab_left_of_the_active_one_keeps_the_active_tab(cx: &mut TestAppCon
     act(cx, &s, |shell, window, cx| {
         shell.new_tab(window, cx);
         shell.new_tab(window, cx);
-        shell.close_tab(0, window, cx);
     });
+    let before = ids(cx, &s.1);
+    act(cx, &s, |shell, window, cx| shell.close_tab(0, window, cx));
     assert_eq!(state(cx, &s.1), (2, 1));
+    assert_eq!(ids(cx, &s.1), [before[1], before[2]]);
+    assert_eq!(active_id(cx, &s.1), before[2]);
+}
+
+#[gpui_kit::test]
+fn closing_an_inactive_tab_keeps_the_focus_in_the_right_field(cx: &mut TestAppContext) {
+    let s = shell(cx);
+    act(cx, &s, |shell, window, cx| shell.new_tab(window, cx));
+    cx.simulate_keystrokes(s.0, "tab");
+    let side = |cx: &mut TestAppContext| {
+        cx.update_window(s.0, |_, window, cx| {
+            s.1.read(cx)
+                .active_screen()
+                .and_then(|screen| screen.read(cx).focused_side(window, cx))
+        })
+        .expect("window")
+    };
+    assert_eq!(side(cx), Some(Side::Right));
+    act(cx, &s, |shell, window, cx| shell.close_tab(0, window, cx));
+    assert_eq!(state(cx, &s.1), (1, 0));
+    assert_eq!(side(cx), Some(Side::Right));
 }
 
 #[gpui_kit::test]

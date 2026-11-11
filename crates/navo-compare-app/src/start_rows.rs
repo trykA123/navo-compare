@@ -70,7 +70,6 @@ fn row_view(
     cx: &Context<StartScreen>,
 ) -> impl IntoElement {
     let t = tokens::current(cx);
-    let id = row.id.clone();
     let side = |text: &str| {
         div()
             .font_family(t.typography.mono_font.clone())
@@ -100,7 +99,7 @@ fn row_view(
         .text_size(t.typography.small)
         .cursor_pointer()
         .hover(|style| style.bg(t.colors.hover))
-        .on_click(cx.listener(move |this, _, _, cx| this.open_row(&id, cx)))
+        .on_click(cx.listener(move |this, _, _, cx| this.click_row(index, cx)))
         .children(row.name.as_ref().map(|name| div().child(name.clone())))
         .child(side(&row.left))
         .child(div().text_color(muted).child("\u{2194}"))
