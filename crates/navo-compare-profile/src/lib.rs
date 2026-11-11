@@ -3,11 +3,15 @@
 
 pub mod brand;
 pub mod paths;
+pub mod recent;
 pub mod session;
 pub mod session_store;
 
 #[cfg(test)]
 mod paths_tests;
+
+#[cfg(test)]
+mod recent_tests;
 
 #[cfg(test)]
 mod session_tests;
