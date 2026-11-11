@@ -1,0 +1,17 @@
+# Workspace of Navo Compare, the standalone compare and merge app.
+[workspace]
+resolver = "3"
+members = ["crates/navo-compare-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.99"
+publish = false
+license = "MIT OR Apache-2.0"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

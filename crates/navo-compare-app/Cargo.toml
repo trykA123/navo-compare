@@ -1,0 +1,15 @@
+# The Navo Compare desktop app: window shell, start screen, sessions and command line.
+[package]
+name = "navo-compare-app"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "navo-compare"
+path = "src/main.rs"
+
+[lints]
+workspace = true
