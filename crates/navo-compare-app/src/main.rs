@@ -17,8 +17,17 @@ mod start_tests;
 mod start_view;
 #[cfg(test)]
 mod test_window;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "U13c wires the injector into the shell")
+)]
 mod theme;
-#[expect(dead_code, reason = "the theme injector wires these tokens in U12a")]
+#[cfg(test)]
+mod theme_bridge_tests;
+#[expect(
+    dead_code,
+    reason = "U12c toasts and U14 hero art read the remaining tokens"
+)]
 mod theme_data;
 #[cfg(test)]
 mod theme_tests;
