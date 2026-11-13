@@ -3,6 +3,11 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "U13c wires the chrome into the shell")
+)]
+mod chrome;
 #[cfg_attr(not(test), expect(dead_code, reason = "U11c and the chrome read it"))]
 mod icons;
 #[cfg_attr(
