@@ -18,6 +18,8 @@ mod start_view;
 #[cfg(test)]
 mod test_window;
 mod theme;
+#[expect(dead_code, reason = "the theme injector wires these tokens in U12a")]
+mod theme_data;
 #[cfg(test)]
 mod theme_tests;
 mod window;
