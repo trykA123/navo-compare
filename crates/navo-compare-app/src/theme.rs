@@ -4,11 +4,17 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use gpui_kit::component::highlighter::{HighlightTheme, SyntaxColors};
 use gpui_kit::component::theme::{Theme as KitTheme, ThemeColor, ThemeMode, ThemeTokens};
-use gpui_kit::{App, Global, WindowAppearance};
+use gpui_kit::{App, Global, Hsla, Rgba, WindowAppearance};
 use navo_compare_profile::appearance::PaletteId;
-use navo_ui::tokens::{self, Colors, Mode, Motion, Rows, Surfaces, Theme};
+use navo_ui::tokens::{
+    self, Colors, DiffColors, DiffTone, MarkColors, Mode, Motion, Rows, Surfaces, Theme,
+};
 
+use crate::theme_data::change_syntax::{
+    ChangeKind, ChangeTokenSet, ChangeTone, SyntaxTokenSet, change_tokens, syntax_tokens,
+};
 use crate::theme_data::palettes::{
     DIMS, DimTokens, MOTION, ModeTokens, MotionTokens, PALETTES, PaletteSpec,
 };
@@ -21,6 +27,8 @@ pub struct SidewiseTheme {
     pub spec: PaletteSpec,
     pub dims: DimTokens,
     pub motion: MotionTokens,
+    pub change: ChangeTokenSet,
+    pub syntax: SyntaxTokenSet,
 }
 
 impl Global for SidewiseTheme {}
@@ -41,6 +49,7 @@ pub fn mode_of(appearance: WindowAppearance) -> Mode {
 pub fn apply_sidewise(palette: PaletteId, mode: Mode, cx: &mut App) {
     let spec = spec_of(palette);
     let tones = mode_tokens(&spec, mode);
+    let syntax_set = syntax_tokens(palette);
     let mut theme = navo_theme(palette, mode, &tones);
     theme.syntax = tokens::current(cx).syntax;
     cx.set_global(theme.clone());
@@ -50,6 +59,8 @@ pub fn apply_sidewise(palette: PaletteId, mode: Mode, cx: &mut App) {
         spec,
         dims: DIMS,
         motion: MOTION,
+        change: change_tokens(palette),
+        syntax: syntax_set,
     });
     KitTheme::change(kit_mode(mode), None, cx);
     KitTheme::update(cx, move |kit| {
@@ -57,10 +68,9 @@ pub fn apply_sidewise(palette: PaletteId, mode: Mode, cx: &mut App) {
         kit.tokens = ThemeTokens::from(kit.colors);
         kit.radius = DIMS.btn_r;
         kit.radius_lg = DIMS.card_r;
-        kit.highlight_theme = Arc::new(tokens::highlight_theme(
-            theme.syntax,
-            mode,
-            &theme.colors,
+        kit.highlight_theme = Arc::new(highlight(
+            &theme,
+            &syntax_set.roles(mode),
             &kit.highlight_theme,
         ));
     });
@@ -89,12 +99,15 @@ fn kit_mode(mode: Mode) -> ThemeMode {
     }
 }
 
-/// The navo tokens with the Sidewise palette over them. The change, mark and file-kind tones
-/// stay navo's until U10b supplies the Sidewise change language and syntax roles.
+/// The navo tokens with the Sidewise palette over them, including its change language. The
+/// file-kind tones stay navo's: Sidewise has no per-file-type colours of its own.
 fn navo_theme(palette: PaletteId, mode: Mode, m: &ModeTokens) -> Theme {
     let mut t = Theme::new(mode);
+    let change = change_tokens(palette).tones(mode);
     t.colors = colors(m, &t.colors);
     t.surfaces = surfaces(m);
+    t.diff = diff_colors(&change, m);
+    t.marks = mark_colors(&change);
     t.radii.md = DIMS.btn_r;
     t.radii.lg = DIMS.row_r;
     t.radii.card = DIMS.card_r;
@@ -162,4 +175,62 @@ fn kit_colors(m: &ModeTokens, k: &mut ThemeColor) {
     k.sidebar_border = m.sep; k.title_bar = m.surface2; k.title_bar_border = m.sep;
     k.status_bar = m.surface2; k.status_bar_border = m.sep; k.window_border = m.sep;
     k.drag_border = m.accent;
+}
+
+/// The kit highlighter names of the seven Sidewise roles, in `SyntaxTokenSet` order; navo's
+/// constant and boolean share the number role, and its doc comments share the comment role.
+#[rustfmt::skip]
+const ROLE_NAMES: [(&str, usize); 10] = [
+    ("keyword", 0), ("type", 1), ("function", 2), ("number", 3), ("constant", 3), ("boolean", 3),
+    ("string", 4), ("comment", 5), ("comment_doc", 5), ("attribute", 6),
+];
+
+/// The six navo diff tones from the Sidewise change language. `same` is the neutral tone navo
+/// calls auto-merged, and the gap hatch is the prototype's `--hatch: var(--layer2)`.
+#[rustfmt::skip]
+fn diff_colors(t: &[ChangeTone; 8], m: &ModeTokens) -> DiffColors {
+    let tone = |kind: ChangeKind| {
+        let c = t[kind as usize];
+        DiffTone { text: c.fg, mark: c.mark, fill: c.bg_strong, wash: c.bg }
+    };
+    DiffColors {
+        delete: tone(ChangeKind::Del), add: tone(ChangeKind::Add), change: tone(ChangeKind::Chg),
+        moved: tone(ChangeKind::Mov), conflict: tone(ChangeKind::Cfl),
+        auto_merged: tone(ChangeKind::Same), gap_hatch: m.layer2,
+    }
+}
+
+/// The change-map fills and ticks: the eight line washes and their marks, in meaning order.
+fn mark_colors(t: &[ChangeTone; 8]) -> MarkColors {
+    MarkColors {
+        fills: t.map(|c| c.bg),
+        ticks: t.map(|c| c.mark),
+    }
+}
+
+/// The kit highlight theme with the Sidewise roles over navo's editor colours and fallbacks.
+#[rustfmt::skip]
+fn highlight(theme: &Theme, roles: &[Hsla; 7], base: &HighlightTheme) -> HighlightTheme {
+    let mut out = tokens::highlight_theme(theme.syntax, theme.mode, &theme.colors, base);
+    if let Some(s) = sidewise_roles(roles) {
+        let syn = &mut out.style.syntax;
+        syn.keyword = s.keyword; syn.type_ = s.type_; syn.function = s.function;
+        syn.number = s.number; syn.constant = s.constant; syn.boolean = s.boolean;
+        syn.string = s.string; syn.comment = s.comment; syn.comment_doc = s.comment_doc;
+        syn.attribute = s.attribute;
+    }
+    out
+}
+
+/// The Sidewise roles as kit syntax styles, through the same TOML path navo's own themes use:
+/// `ThemeStyle` has no public constructor, so a style can only be read back from a table.
+fn sidewise_roles(roles: &[Hsla; 7]) -> Option<SyntaxColors> {
+    let mut src = String::new();
+    for (name, at) in ROLE_NAMES {
+        let rgb = Rgba::from(roles[at]);
+        let byte = |c: f32| (c * 255.0).round() as u8;
+        let hex = format!("#{:02x}{:02x}{:02x}", byte(rgb.r), byte(rgb.g), byte(rgb.b));
+        src.push_str(&format!("{name}.color = \"{hex}\"\n"));
+    }
+    toml::from_str(&src).ok()
 }

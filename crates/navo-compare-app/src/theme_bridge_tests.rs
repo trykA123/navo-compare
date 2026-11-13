@@ -4,12 +4,24 @@
 use std::time::Duration;
 
 use gpui_kit::component::theme::{Theme as KitTheme, ThemeMode};
-use gpui_kit::{App, ReadGlobal, TestAppContext};
+use gpui_kit::{App, Hsla, ReadGlobal, Rgba, TestAppContext};
 use navo_compare_profile::appearance::PaletteId;
 use navo_ui::tokens::{self, Mode};
 
 use crate::theme::{SidewiseTheme, apply_sidewise};
+use crate::theme_data::change_syntax::{ChangeKind, change_tokens, syntax_tokens};
 use crate::theme_data::palettes::{DIMS, MOTION, ModeTokens, PALETTES, PaletteSpec};
+
+/// The kit highlighter names of the seven Sidewise syntax roles, in role order.
+const ROLE_NAMES: [&str; 7] = [
+    "keyword",
+    "type",
+    "function",
+    "number",
+    "string",
+    "comment",
+    "attribute",
+];
 
 /// The static spec of one palette, found by id so the tests do not lean on table order.
 fn spec(palette: PaletteId) -> PaletteSpec {
@@ -230,5 +242,81 @@ fn applying_the_same_palette_twice_is_idempotent(cx: &mut TestAppContext) {
 fn palettes_are_in_palette_id_order() {
     for (at, (id, _)) in PALETTES.iter().enumerate() {
         assert_eq!(*id as usize, at, "{id:?} is not at its discriminant index");
+    }
+}
+
+/// Contrast Dark after Violet Light carries the Sidewise change tones and syntax roles,
+/// not navo's mode-derived defaults.
+#[gpui_kit::test]
+fn contrast_dark_carries_the_sidewise_change_and_syntax_tokens(cx: &mut TestAppContext) {
+    themed(cx, PaletteId::Violet, Mode::Light);
+    cx.update(|cx| apply_sidewise(PaletteId::Contrast, Mode::Dark, cx));
+    cx.update(|cx| {
+        let tones = change_tokens(PaletteId::Contrast).tones(Mode::Dark);
+        let roles = syntax_tokens(PaletteId::Contrast).roles(Mode::Dark);
+        let tone = |kind: ChangeKind| tones[kind as usize];
+        let (add, del, chg) = (
+            tone(ChangeKind::Add),
+            tone(ChangeKind::Del),
+            tone(ChangeKind::Chg),
+        );
+        let navo = tokens::current(cx);
+        assert_eq!(navo.diff.add.text, add.fg, "diff add text");
+        assert_eq!(navo.diff.add.wash, add.bg, "diff add line wash");
+        assert_eq!(
+            navo.diff.delete.fill, del.bg_strong,
+            "diff delete word fill"
+        );
+        assert_eq!(navo.diff.change.mark, chg.mark, "diff change mark");
+        assert_eq!(
+            navo.diff.moved.text,
+            tone(ChangeKind::Mov).fg,
+            "diff moved text"
+        );
+        assert_eq!(
+            navo.diff.conflict.text,
+            tone(ChangeKind::Cfl).fg,
+            "diff conflict text"
+        );
+        assert_eq!(navo.marks.fills, tones.map(|t| t.bg), "change map fills");
+        assert_eq!(navo.marks.ticks, tones.map(|t| t.mark), "change map ticks");
+        let side = SidewiseTheme::global(cx);
+        assert_eq!(
+            side.change,
+            change_tokens(PaletteId::Contrast),
+            "sidewise change set"
+        );
+        assert_eq!(
+            side.syntax,
+            syntax_tokens(PaletteId::Contrast),
+            "sidewise syntax set"
+        );
+        let kit = KitTheme::global(cx);
+        assert_syntax_roles(kit, &roles);
+    });
+}
+
+/// The kit keeps syntax colours as 8-bit hex in both serde directions, so a role is the token
+/// quantised to a byte per channel — not the raw OKLCH conversion.
+fn quantised(color: Hsla) -> Hsla {
+    let rgb = Rgba::from(color);
+    let byte = |c: f32| (c * 255.0).round() / 255.0;
+    Rgba {
+        r: byte(rgb.r),
+        g: byte(rgb.g),
+        b: byte(rgb.b),
+        a: 1.0,
+    }
+    .into()
+}
+
+/// Every kit syntax role carries its own Sidewise token.
+fn assert_syntax_roles(kit: &KitTheme, roles: &[Hsla; 7]) {
+    for (at, name) in ROLE_NAMES.iter().enumerate() {
+        let got = kit
+            .highlight_theme
+            .style(name)
+            .and_then(|style| style.color);
+        assert_eq!(got, Some(quantised(roles[at])), "syntax {name}");
     }
 }
