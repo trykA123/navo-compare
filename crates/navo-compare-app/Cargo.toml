@@ -18,7 +18,8 @@ workspace = true
 gpui-kit = "=0.9.1"
 navo-compare-cli = { path = "../navo-compare-cli" }
 navo-compare-profile = { path = "../navo-compare-profile" }
-navo-ui = { git = "https://github.com/trykA123/navo", rev = "14a57fd611670233aee055148a4a87d2ba8cc518" }
+navo-ui = { git = "https://github.com/trykA123/navo", rev = "4900194ca5cdabf358020319f79172e941491cb5" }
+resvg = "=0.49.0"
 
 [build-dependencies]
 embed-resource = "3.0.12"
