@@ -7,8 +7,10 @@
 mod icons;
 #[cfg_attr(
     not(test),
-    expect(dead_code, reason = "U12c toasts and the U13 chrome read it")
+    expect(dead_code, reason = "U13c wires the layers into the shell")
 )]
+mod layers;
+#[cfg_attr(not(test), expect(dead_code, reason = "the U13 chrome reads it"))]
 mod motion;
 #[cfg(test)]
 mod motion_tests;
@@ -31,10 +33,7 @@ mod test_window;
 mod theme;
 #[cfg(test)]
 mod theme_bridge_tests;
-#[expect(
-    dead_code,
-    reason = "U12c toasts and U14 hero art read the remaining tokens"
-)]
+#[expect(dead_code, reason = "U14 hero art reads the remaining tokens")]
 mod theme_data;
 #[cfg(test)]
 mod theme_tests;
