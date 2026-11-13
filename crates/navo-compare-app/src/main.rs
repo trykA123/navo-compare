@@ -5,6 +5,13 @@
 
 #[cfg_attr(not(test), expect(dead_code, reason = "U11c and the chrome read it"))]
 mod icons;
+#[cfg_attr(
+    not(test),
+    expect(dead_code, reason = "U12c toasts and the U13 chrome read it")
+)]
+mod motion;
+#[cfg(test)]
+mod motion_tests;
 mod shell;
 #[cfg(test)]
 mod shell_tests;
