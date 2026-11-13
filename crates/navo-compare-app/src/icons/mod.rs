@@ -1,6 +1,10 @@
 //! File-type icons: the prototype's `ICON_MAP` (Material Icon Theme 5.40.0), variants in pack order.
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub mod cache;
+#[cfg(test)]
+mod cache_tests;
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub(crate) enum MaterialIcon {
     C,
     Console,

@@ -5774,6 +5774,7 @@ version = "0.1.0"
 dependencies = [
  "embed-resource",
  "gpui-kit",
+ "image",
  "navo-compare-cli",
  "navo-compare-profile",
  "navo-ui",

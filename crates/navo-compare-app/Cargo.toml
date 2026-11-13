@@ -16,6 +16,7 @@ workspace = true
 
 [dependencies]
 gpui-kit = "=0.9.1"
+image = { version = "=0.25.10", default-features = false }
 navo-compare-cli = { path = "../navo-compare-cli" }
 navo-compare-profile = { path = "../navo-compare-profile" }
 navo-ui = { git = "https://github.com/trykA123/navo", rev = "4900194ca5cdabf358020319f79172e941491cb5" }
