@@ -6,7 +6,7 @@ use gpui_kit::{Hsla, Pixels, px};
 use navo_compare_profile::appearance::PaletteId;
 
 /// OKLCH as the prototype writes it: lightness in percent, chroma, hue in degrees.
-type Oklch = (f32, f32, f32);
+pub(crate) type Oklch = (f32, f32, f32);
 
 /// The W3C CSS Color 4 OKLCH to linear-sRGB matrix, before any gamut mapping.
 #[expect(
@@ -27,7 +27,7 @@ fn linear((l, c, h): Oklch) -> [f32; 3] {
 
 /// Converts a token to `Hsla`, giving up chroma rather than hue or lightness
 /// until it fits sRGB, so a clipped colour keeps its family instead of shifting.
-fn oklch((l, c, h): Oklch) -> Hsla {
+pub(crate) fn oklch((l, c, h): Oklch) -> Hsla {
     let l = l / 100.0;
     let fits = |c: f32| linear((l, c, h)).iter().all(|v| (0.0..=1.0).contains(v));
     let mut chroma = c;
